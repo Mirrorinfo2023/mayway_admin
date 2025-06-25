@@ -1,0 +1,117 @@
+.mainHeader {
+  background: white;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: bold;
+  color: #0d47a1;
+}
+
+.profileIcon {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  color: #0d47a1;
+}
+
+.blueText {
+  font-weight: 500;
+  color: #007FFF;
+  cursor: pointer;
+}
+
+.dashboard {
+  padding: 2rem;
+}
+
+.sectionTitle h3 {
+  font-size: 1.5rem;
+  color: #ff6f00;
+}
+
+.Container {
+  background: linear-gradient(to right, #007FFF, #FF6B00);
+  padding: 1rem;
+  border-radius: 10px;
+  color: white;
+  margin-bottom: 2rem;
+}
+
+.description {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.servicesSection {
+  margin: 2rem 0;
+}
+
+.servicesHeading {
+  font-size: 1.4rem;
+  color: #0d47a1;
+}
+
+.servicesIntro {
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.servicesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.serviceCard {
+  background: white;
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  color: #333;
+}
+
+.outerContainer {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 2rem 0;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.innerContainer {
+  flex: 1;
+  min-width: 300px;
+  padding: 1rem;
+}
+
+.left {
+  padding-right: 1rem;
+}
+
+.divider {
+  height: 2px;
+  width: 50px;
+  background: #0d47a1;
+  margin: 0.5rem 0;
+}
+
+.knowMore {
+  margin-top: 1rem;
+  color: #ff6f00;
+  font-weight: bold;
+}
+
+.mirrorBoxImg {
+  width: 100%;
+  border-radius: 12px;
+}

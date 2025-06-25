@@ -24,3 +24,22 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+.main-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px;
+  background: white;
+  border-bottom: 1px solid #ddd;
+}
+.logo {
+  font-weight: bold;
+  font-size: 20px;
+}
+.profile-icon {
+  display: flex;
+  gap: 10px;
+}
+.blue_text {
+  color: #0d47a1;
+  font-weight: bold;
+}
