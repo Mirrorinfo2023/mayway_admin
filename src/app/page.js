@@ -1,7 +1,7 @@
 'use client';
 
 import Dashboard from '../pages/Dashboard';
-import HomeScreen from '@/HomeScreen';
+import HomeScreen from '@/pages/HomeScreen';
 import MirrorGame from '../pages/mirrorgame';
 import MirrorBusiness from '../pages/mirror_business';
 import MirrorNursing from '../pages/mirror_nursing';

@@ -27,12 +27,17 @@ const MirrorGame = () => {
       </div>
 
       <p className="mirror-description">
-        Mirror Game is an innovative gaming platform integrated within the Mirror ecosystem...
+        Mirror Game is an innovative gaming platform integrated within the Mirror ecosystem, aiming to redefine how users interact with digital entertainment. Built with seamless functionality and engaging gameplay mechanics, Mirror Game offers users a dynamic and rewarding experience, whether they are casual players or serious gamers.
       </p>
 
       <p className="mirror-description">
-        Designed for all age groups, Mirror Game isn’t just about entertainment...
+        Designed for all age groups, Mirror Game isnt just about entertainment — it s also about learning, improving reflexes, and winning rewards. From quiz-based games and logic puzzles to reflex challenges and arcade adventures, users can play, compete, and even earn points or tokens that can be redeemed within the Mirror platform. The platform prioritizes a secure, ad-free environment with regular game updates to keep content fresh and exciting.
       </p>
+
+      <p className="mirror-description">
+        Whether you are unwinding after a busy day or challenging your friends for a high score, Mirror Game brings communities together through fun, friendly competition. Its more than just a game — its your gateway to smart play, digital engagement, and daily rewards in the Mirror world.
+      </p>
+
 
       <div className="mirror-section-title">Key Features</div>
       <div className="mirror-feature-list">

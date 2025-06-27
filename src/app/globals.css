@@ -43,3 +43,11 @@ body {
   color: #0d47a1;
   font-weight: bold;
 }
+/* Hide scrollbar cross-browser */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

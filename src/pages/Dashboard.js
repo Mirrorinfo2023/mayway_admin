@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { FaUserCircle } from 'react-icons/fa';
 import styles from '../styles/Dashboard.module.css';
+
 const services = [
   {
     title: '01. Mirror Game',
@@ -47,8 +48,8 @@ const Dashboard = () => {
       <header className={styles.mainHeader}>
         <div className={styles.logo}>Mirror Hub Dashboard</div>
         <div className={styles.profileIcon}>
-          <div className={styles.blueText}>About us</div>
-          <div>Login</div>
+          <Link href="/AboutUsScreen" className="text-sm text-amber-400 hover:underline">About Us</Link>
+          {/* <div>Login</div> */}
           <FaUserCircle size={25} color="#0d47a1" />
         </div>
       </header>
@@ -59,15 +60,15 @@ const Dashboard = () => {
         </div>
 
         <div className={`${styles.Container} ${styles.description}`}>
-          Mirror is India First wallet payments & Shopping app with high cashback on Recharge and utility services.
-          With Mirror, we strive to bring you daily needs through your mobile phone and desktop. Mirror is committed to transforming the clarity.
+          Mirror is India’s first wallet payments & shopping app with high cashback on recharge and utility services.
+          With Mirror, we strive to bring you daily needs through your mobile phone and desktop. Mirror is committed to transforming clarity in digital transactions.
         </div>
 
         <section className={styles.servicesSection}>
           <h2 className={styles.servicesHeading}>Our Services</h2>
-          <p>
-  We offer a range of digital solutions to help your business grow and thrive in today&rsquo;s competitive landscape.
-</p>
+          <p className={styles.servicesIntro}>
+            We offer a range of digital solutions to help your business grow and thrive in today&rsquo;s competitive landscape.
+          </p>
 
           <div className={styles.servicesGrid}>
             <div className={styles.serviceCard}>
@@ -90,28 +91,30 @@ const Dashboard = () => {
         </section>
 
         {services.map((item, index) => (
-          <Link key={index} href={item.link} className={styles.linkBox}>
-            <div className={styles.outerContainer}>
-              <div className={`${styles.innerContainer} ${styles.left}`}>
-                <div className='forced-colors:**: not-target:'>
-                  <h3>{item.title}</h3>
+          <Link key={index} href={item.link} passHref legacyBehavior>
+            <a className={styles.linkBox}>
+              <div className={styles.outerContainer}>
+                <div className={`${styles.innerContainer} ${styles.left}`}>
+                  <div className={styles.sectionTitle}>
+                    <h3>{item.title}</h3>
+                  </div>
+                  <div className={styles.divider}></div>
+                  <p>{item.content}</p>
+                  <div className={styles.knowMore}>
+                    Know more <span style={{ fontSize: '16px' }}>→</span>
+                  </div>
                 </div>
-                <div className={styles.divider}></div>
-                <p>{item.content}</p>
-                <div className={styles.knowMore}>
-                  know more <span style={{ fontSize: '16px' }}>→</span>
+                <div className={styles.innerContainer}>
+                  <Image
+                    src={item.img}
+                    alt={item.title}
+                    width={400}
+                    height={250}
+                    className={styles.mirrorBoxImg}
+                  />
                 </div>
               </div>
-              <div className={styles.innerContainer}>
-                <Image
-                  src={item.img}
-                  alt={item.title}
-                  width={400}
-                  height={250}
-                  className={styles.mirrorBoxImg}
-                />
-              </div>
-            </div>
+            </a>
           </Link>
         ))}
       </div>
