@@ -1,48 +1,56 @@
+import '@/styles/globals.css'
+import { Provider } from 'react-redux'
+import store from '../../store'
+//import DisableCopyPasteRightClick from "../components/UI/DisableCopyPasteRightClick";
 
-// src/pages/_app.js
-"use client"; // required if you use hooks like useEffect here
-import "@/styles/globals.css";
-import { Provider } from "react-redux";
-import store from "@/redux/store"; // no curly braces now
-import Layout from "@/components/common/Layout";
-import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
 
-export default function MyApp({ Component, pageProps }) {
-  const noLayout = Component.noLayout || false;
-  const router = useRouter();
-  const [authorized, setAuthorized] = useState(false);
 
-  useEffect(() => {
-    // Skip auth check for login/register pages
-    if (noLayout) {
-      setAuthorized(true);
-      return;
-    }
 
-    const token = sessionStorage.getItem("token"); // JWT or your auth method
-    if (!token) {
-      router.replace("/login"); // redirect to login if not authenticated
-    } else {
-      setAuthorized(true);
-    }
-  }, [router.pathname]);
+export default function App({ Component, pageProps }) {
 
-  // Prevent rendering before auth check
-  if (!authorized) return null;
+  // const arr = [1,3,2,7,4,0,2,8,2,8,6]
+
+  // Input: list1 = [1,2,4], list2 = [1,3,4]Output: [1,1,2,3,4,4]
+
+  // const arr = {
+  //   name: 'pankaj',
+  //   exp: {
+  //     job1: 'test1',
+  //     job2: 'test2',
+  //     skills: {
+  //       skill1: 'java',
+  //       skill2: 'node'
+  //     }
+  //   }
+  // }
+
+  // const add = (perameter) => {
+
+  //   console.log(Object.entries(perameter))
+
+  // }
+
+  // add(arr)
+
+  // const arr1 = {
+  //   _name: "pankaj",
+  //   _exp: {
+  //     _job1: "test1",
+  //     _job2: "test2",
+  //     _skills: {
+  //       _skill1: "java",
+  //       _skill2: "node"
+  //     }
+  //   }
+  // }
+
+
 
   return (
-    <Provider store={store}>
-      {noLayout ? (
-        <Component {...pageProps} />
-      ) : (
-        <Layout>
-          <Component {...pageProps} />
-        </Layout>
-      )}
+    <Provider store={store} >
+      {/* <DisableCopyPasteRightClick /> */}
+      <Component {...pageProps} />
     </Provider>
-  );
+  )
+
 }
-
-
-
