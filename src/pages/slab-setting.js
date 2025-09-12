@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import Layout from "@/components/Dashboard/layout";
 import {
   Grid,
@@ -12,6 +12,7 @@ import {
   TableRow,
   Paper,
   Typography,
+  Divider,
   Box,
   TextField,
   Dialog,
@@ -25,9 +26,6 @@ import {
   Select,
   InputAdornment,
   IconButton,
-  Alert,
-  CircularProgress,
-  Chip,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
@@ -35,9 +33,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
 
-// Styled table cells
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
     backgroundColor: theme.palette.primary.main,
@@ -57,58 +53,48 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
-// All available keys
-const messageKeys = [
-  "first_name",
-  "last_name",
-  "config.APP_NAME",
-  "created_on",
-  "referal_fname",
-  "referal_lname",
-  "user_fname",
-  "user_lname",
-  "mobile",
-  "mlm_user_id",
-  "config.SUPPORT_TEAM",
-  "cbamount",
-  "main_amount",
-  "consumer_mobile",
-  "amount",
-  "touserFirstName",
-  "touserLastName",
-  "fromuserFirstName",
-  "fromuserLastName",
-  "rejection_reason",
-  "reason",
-  "wallet_type",
-  "name",
-  "address",
+// Demo data
+const testMessages = [
+  {
+    id: 1,
+    label_name: "Welcome Message",
+    whatsapp_content:
+      "Welcome to our service! We are excited to have you on board.",
+    email_content:
+      "Dear Customer,\n\nWelcome to our platform! We look forward to serving you.",
+    message_content: "Welcome! Thank you for joining us.",
+    date_time: new Date().toLocaleString(),
+  },
+  {
+    id: 2,
+    label_name: "OTP Message",
+    whatsapp_content: "Your OTP is 123456. Valid for 5 minutes.",
+    email_content:
+      "Your one-time password is 123456\n\nThis OTP is valid for 5 minutes.",
+    message_content: "OTP: 123456 (Valid for 5 mins)",
+    date_time: new Date().toLocaleString(),
+  },
 ];
 
-const fillTemplate = (template, values) => {
-  if (!template) return "";
-  return template.replace(/\{\{(.*?)\}\}/g, (_, key) => {
-    const trimmedKey = key.trim();
-    return values[trimmedKey] ?? `\${${trimmedKey}}`;
-  });
-};
-
 function SlabSetting() {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(testMessages);
   const [searchTerm, setSearchTerm] = useState("");
   const [openViewDialog, setOpenViewDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openAddDialog, setOpenAddDialog] = useState(false);
-  const [openSlabDialog, setOpenSlabDialog] = useState(false);
+  const [openSlabDialog, setOpenSlabDialog] = useState(false); // NEW dialog for slabs
   const [selectedMessage, setSelectedMessage] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
-  const [labelOptions, setLabelOptions] = useState([]);
+  // Dynamic slab options
+  const [labelOptions, setLabelOptions] = useState([
+    "Welcome Message",
+    "OTP Message",
+    "Payment Success",
+    "Password Reset",
+    "Order Confirmation",
+  ]);
 
   const [newSlab, setNewSlab] = useState("");
-  const [intervalDays, setIntervalDays] = useState(7);
 
   const [currentMessage, setCurrentMessage] = useState({
     id: "",
@@ -118,49 +104,11 @@ function SlabSetting() {
     message_content: "",
   });
 
-  // Fetch slabs on component mount
-  useEffect(() => {
-    fetchSlabs();
-  }, []);
-
-  const fetchSlabs = async () => {
-    setLoading(true);
-    try {
-      // This would be your API call to fetch slabs
-      // const response = await api.get("/api/slab/get-slabs");
-      // setMessages(response.data);
-      // setLabelOptions(response.data.map(slab => slab.label_name));
-      
-      // For demo purposes, using test data
-      setTimeout(() => {
-        const testMessages = [
-          {
-            id: 1,
-            label_name: "Welcome Message",
-            whatsapp_content: "Welcome to our service {{first_name}}! We are excited to have you on board.",
-            email_content: "Dear {{first_name}} {{last_name}},\n\nWelcome to our platform! We look forward to serving you.",
-            message_content: "Welcome {{first_name}}! Thank you for joining us.",
-            date_time: new Date().toLocaleString(),
-          },
-          {
-            id: 2,
-            label_name: "OTP Message",
-            whatsapp_content: "Your OTP is {{otp}}. Valid for 5 minutes.",
-            email_content: "Your one-time password is {{otp}}\n\nThis OTP is valid for 5 minutes.",
-            message_content: "OTP: {{otp}} (Valid for 5 mins)",
-            date_time: new Date().toLocaleString(),
-          },
-        ];
-        
-        setMessages(testMessages);
-        setLabelOptions(["Welcome Message", "OTP Message", "Payment Success", "Password Reset", "Order Confirmation"]);
-        setLoading(false);
-      }, 1000);
-    } catch (error) {
-      setError("Failed to fetch slabs");
-      setLoading(false);
-    }
-  };
+  // Robust id generator
+  const nextId = useMemo(
+    () => (messages.length ? Math.max(...messages.map((m) => m.id)) + 1 : 1),
+    [messages]
+  );
 
   const handleSearch = (value) => setSearchTerm(value);
 
@@ -191,118 +139,32 @@ function SlabSetting() {
   };
   const handleAddClose = () => setOpenAddDialog(false);
 
-  const handleUpdate = async () => {
-    setLoading(true);
-    setError("");
-    
-    try {
-      if (currentMessage.id) {
-        // Update existing slab
-        // await api.put(`/api/slab/update-slab/${currentMessage.id}`, currentMessage);
-        
-        // For demo purposes
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.id === currentMessage.id 
-              ? {...currentMessage, date_time: new Date().toLocaleString()} 
-              : msg
-          )
-        );
-        setSuccess("Slab updated successfully");
-      } else {
-        // Add new slab
-        // await api.post("/api/slab/add-slab", currentMessage);
-        
-        // For demo purposes
-        const newId = messages.length ? Math.max(...messages.map(m => m.id)) + 1 : 1;
-        setMessages(prev => [
-          ...prev, 
-          {...currentMessage, id: newId, date_time: new Date().toLocaleString()}
-        ]);
-        setSuccess("Slab added successfully");
-      }
-      
-      if (openEditDialog) handleEditClose();
-      if (openAddDialog) handleAddClose();
-    } catch (error) {
-      setError(error.response?.data?.message || "Failed to save slab");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleUpdate = () => {
+    const timeNow = new Date().toLocaleString();
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this slab?")) return;
-    
-    setLoading(true);
-    try {
-      // await api.delete(`/api/slab/delete-slab/${id}`);
-      
-      // For demo purposes
-      setMessages(prev => prev.filter(msg => msg.id !== id));
-      setSuccess("Slab deleted successfully");
-      if (openEditDialog) handleEditClose();
-    } catch (error) {
-      setError("Failed to delete slab");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-const handleAddSlab = async () => {
-  if (newSlab.trim() === "") {
-    setError("Slab name is required");
-    return;
-  }
-
-  setLoading(true);
-  setError("");
-  setSuccess("");
-
-  try {
-    console.log("Adding new slab:", { name: newSlab.trim(), interval_days: intervalDays });
-    
-    // API call using fetch
-    const response = await fetch("/api/slab/add-slab", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: newSlab.trim(),
-        interval_days: intervalDays,
-      }),
-    });
-
-    console.log("API response status:", response.status);
-    
-    const responseData = await response.json();
-    console.log("API response data:", responseData);
-
-    if (response.ok) {
-      console.log("Slab added successfully");
-      
-      // Update local state
-      setLabelOptions(prev => [newSlab, ...prev]);
-      setCurrentMessage(prev => ({ ...prev, label_name: newSlab }));
-      setNewSlab("");
-      setIntervalDays(7);
-      setOpenSlabDialog(false);
-      setSuccess("Slab type added successfully");
-      
-      console.log("Local state updated with new slab:", newSlab);
+    if (currentMessage.id) {
+      // Update existing
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === currentMessage.id
+            ? { ...currentMessage, date_time: timeNow }
+            : msg
+        )
+      );
+      handleEditClose();
     } else {
-      console.error("API error:", responseData);
-      setError(responseData.message || "Failed to add slab type");
+      // Add new
+      setMessages((prev) => [
+        ...prev,
+        { ...currentMessage, id: nextId, date_time: timeNow },
+      ]);
+      handleAddClose();
     }
-  } catch (error) {
-    console.error("Network error:", error);
-    setError("Network error: Failed to connect to server");
-  } finally {
-    setLoading(false);
-    console.log("Loading state set to false");
-  }
-};
+  };
+
+  const handleDelete = (id) => {
+    setMessages((prev) => prev.filter((msg) => msg.id !== id));
+  };
 
   const filteredMessages = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
@@ -314,29 +176,26 @@ const handleAddSlab = async () => {
     });
   }, [messages, searchTerm]);
 
+  // Simple validation for Save button
   const canSave =
     currentMessage.label_name &&
     (currentMessage.whatsapp_content ||
       currentMessage.email_content ||
       currentMessage.message_content);
 
+  // Handle adding new slab
+  const handleAddSlab = () => {
+    if (newSlab.trim() !== "") {
+      setLabelOptions([newSlab, ...labelOptions]); // Add to top
+      setCurrentMessage((prev) => ({ ...prev, label_name: newSlab })); // Auto-select
+      setNewSlab("");
+      setOpenSlabDialog(false);
+    }
+  };
+
   return (
     <Layout>
       <Grid container spacing={2} sx={{ p: 2 }}>
-        {error && (
-          <Grid item xs={12}>
-            <Alert severity="error" onClose={() => setError("")}>
-              {error}
-            </Alert>
-          </Grid>
-        )}
-        {success && (
-          <Grid item xs={12}>
-            <Alert severity="success" onClose={() => setSuccess("")}>
-              {success}
-            </Alert>
-          </Grid>
-        )}
         <Grid item xs={12}>
           <TableContainer component={Paper} elevation={3}>
             <Box
@@ -364,101 +223,81 @@ const handleAddSlab = async () => {
                     ),
                   }}
                 />
-                <Button 
-                  variant="contained" 
-                  color="primary" 
-                  onClick={handleAddOpen}
-                  startIcon={<AddIcon />}
-                >
+                <Button variant="contained" color="primary" onClick={handleAddOpen}>
                   Add New Slab
                 </Button>
               </Box>
             </Box>
 
-            {loading ? (
-              <Box display="flex" justifyContent="center" p={3}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <Table sx={{ minWidth: 900 }}>
-                <TableHead>
-                  <TableRow>
-                    <StyledTableCell>SR No.</StyledTableCell>
-                    <StyledTableCell>Slab Name</StyledTableCell>
-                    <StyledTableCell>WhatsApp Content</StyledTableCell>
-                    <StyledTableCell>Email Content</StyledTableCell>
-                    <StyledTableCell>Calls Content</StyledTableCell>
-                    <StyledTableCell>Date & Time</StyledTableCell>
-                    <StyledTableCell align="center">Actions</StyledTableCell>
-                  </TableRow>
-                </TableHead>
+            <Table sx={{ minWidth: 900 }}>
+              <TableHead>
+                <TableRow>
+                  <StyledTableCell>SR No.</StyledTableCell>
+                  <StyledTableCell>Slab Name</StyledTableCell>
+                  <StyledTableCell>WhatsApp Content</StyledTableCell>
+                  <StyledTableCell>Email Content</StyledTableCell>
+                  <StyledTableCell>Calls</StyledTableCell>
+                  <StyledTableCell>Date &amp; Time</StyledTableCell>
+                  <StyledTableCell align="center">Actions</StyledTableCell>
+                </TableRow>
+              </TableHead>
 
-                <TableBody>
-                  {filteredMessages.length === 0 ? (
-                    <StyledTableRow>
-                      <StyledTableCell colSpan={7} align="center">
-                        No slabs found.
+              <TableBody>
+                {filteredMessages.length === 0 ? (
+                  <StyledTableRow>
+                    <StyledTableCell colSpan={7} align="center">
+                      No slabs found.
+                    </StyledTableCell>
+                  </StyledTableRow>
+                ) : (
+                  filteredMessages.map((message, index) => (
+                    <StyledTableRow key={message.id}>
+                      <StyledTableCell>{index + 1}</StyledTableCell>
+                      <StyledTableCell>{message.label_name}</StyledTableCell>
+
+                      <StyledTableCell>
+                        {message.whatsapp_content.length > 40
+                          ? `${message.whatsapp_content.substring(0, 40)}…`
+                          : message.whatsapp_content}
+                      </StyledTableCell>
+
+                      <StyledTableCell>
+                        {message.email_content.length > 40
+                          ? `${message.email_content.substring(0, 40)}…`
+                          : message.email_content}
+                      </StyledTableCell>
+
+                      <StyledTableCell>
+                        {message.message_content.length > 40
+                          ? `${message.message_content.substring(0, 40)}…`
+                          : message.message_content}
+                      </StyledTableCell>
+
+                      <StyledTableCell>
+                        {message.date_time || "—"}
+                      </StyledTableCell>
+
+                      <StyledTableCell align="center">
+                        <IconButton
+                          onClick={() => handleViewOpen(message)}
+                          color="primary"
+                          title="View"
+                        >
+                          <VisibilityIcon />
+                        </IconButton>
+                        <IconButton
+                          onClick={() => handleEditOpen(message)}
+                          color="secondary"
+                          title="Edit"
+                        >
+                          <EditIcon />
+                        </IconButton>
                       </StyledTableCell>
                     </StyledTableRow>
-                  ) : (
-                    filteredMessages.map((message, index) => (
-                      <StyledTableRow key={message.id}>
-                        <StyledTableCell>{index + 1}</StyledTableCell>
-                        <StyledTableCell>
-                          <Chip label={message.label_name} color="primary" variant="outlined" />
-                        </StyledTableCell>
-
-                        <StyledTableCell>
-                          {message.whatsapp_content && message.whatsapp_content.length > 40
-                            ? `${message.whatsapp_content.substring(0, 40)}…`
-                            : message.whatsapp_content || "—"}
-                        </StyledTableCell>
-
-                        <StyledTableCell>
-                          {message.email_content && message.email_content.length > 40
-                            ? `${message.email_content.substring(0, 40)}…`
-                            : message.email_content || "—"}
-                        </StyledTableCell>
-
-                        <StyledTableCell>
-                          {message.message_content && message.message_content.length > 40
-                            ? `${message.message_content.substring(0, 40)}…`
-                            : message.message_content || "—"}
-                        </StyledTableCell>
-
-                        <StyledTableCell>
-                          {message.date_time || "—"}
-                        </StyledTableCell>
-
-                        <StyledTableCell align="center">
-                          <IconButton
-                            onClick={() => handleViewOpen(message)}
-                            color="primary"
-                            title="View"
-                          >
-                            <VisibilityIcon />
-                          </IconButton>
-                          <IconButton
-                            onClick={() => handleEditOpen(message)}
-                            color="secondary"
-                            title="Edit"
-                          >
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton
-                            onClick={() => handleDelete(message.id)}
-                            color="error"
-                            title="Delete"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </StyledTableCell>
-                      </StyledTableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            )}
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </TableContainer>
         </Grid>
       </Grid>
@@ -466,14 +305,26 @@ const handleAddSlab = async () => {
       {/* Edit/Add Dialog */}
       <Dialog
         open={openEditDialog || openAddDialog}
-        onClose={currentMessage.id ? handleEditClose : handleAddClose}
+        onClose={() => {
+          if (currentMessage && currentMessage.id) {
+            handleEditClose();
+          } else {
+            handleAddClose();
+          }
+        }}
         maxWidth="md"
         fullWidth
       >
         <DialogTitle sx={{ bgcolor: "primary.main", color: "white" }}>
           {currentMessage.id ? "Edit Slab" : "Add New Slab"}
           <IconButton
-            onClick={currentMessage.id ? handleEditClose : handleAddClose}
+            onClick={() => {
+              if (currentMessage && currentMessage.id) {
+                handleEditClose();
+              } else {
+                handleAddClose();
+              }
+            }}
             sx={{ position: "absolute", right: 8, top: 8, color: "white" }}
           >
             <CloseIcon />
@@ -482,7 +333,7 @@ const handleAddSlab = async () => {
 
         <DialogContent dividers sx={{ pt: 3 }}>
           <Grid container spacing={3}>
-            <Grid item xs={12} sx={{ display: "flex", gap: 1, alignItems: "flex-end" }}>
+            <Grid item xs={12} sx={{ display: "flex", gap: 1 }}>
               <FormControl fullWidth>
                 <InputLabel id="edit-label-select">Slab Name</InputLabel>
                 <Select
@@ -508,14 +359,13 @@ const handleAddSlab = async () => {
               </IconButton>
             </Grid>
 
-            {/* WhatsApp Content with key insert */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
                 multiline
                 minRows={3}
                 label="WhatsApp Content"
-                value={currentMessage.whatsapp_content || ""}
+                value={currentMessage.whatsapp_content}
                 onChange={(e) =>
                   setCurrentMessage((prev) => ({
                     ...prev,
@@ -523,36 +373,15 @@ const handleAddSlab = async () => {
                   }))
                 }
               />
-              <FormControl fullWidth sx={{ mt: 1 }}>
-                <InputLabel>Insert Key</InputLabel>
-                <Select
-                  value=""
-                  label="Insert Key"
-                  onChange={(e) => {
-                    const key = e.target.value;
-                    setCurrentMessage((prev) => ({
-                      ...prev,
-                      whatsapp_content: (prev.whatsapp_content || "") + `{{${key}}}`,
-                    }));
-                  }}
-                >
-                  {messageKeys.map((key) => (
-                    <MenuItem key={key} value={key}>
-                      {key}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
             </Grid>
 
-            {/* Email Content */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
                 multiline
                 minRows={3}
                 label="Email Content"
-                value={currentMessage.email_content || ""}
+                value={currentMessage.email_content}
                 onChange={(e) =>
                   setCurrentMessage((prev) => ({
                     ...prev,
@@ -560,36 +389,15 @@ const handleAddSlab = async () => {
                   }))
                 }
               />
-              <FormControl fullWidth sx={{ mt: 1 }}>
-                <InputLabel>Insert Key</InputLabel>
-                <Select
-                  value=""
-                  label="Insert Key"
-                  onChange={(e) => {
-                    const key = e.target.value;
-                    setCurrentMessage((prev) => ({
-                      ...prev,
-                      email_content: (prev.email_content || "") + `{{${key}}}`,
-                    }));
-                  }}
-                >
-                  {messageKeys.map((key) => (
-                    <MenuItem key={key} value={key}>
-                      {key}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
             </Grid>
 
-            {/* Calls Content */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
                 multiline
                 minRows={3}
                 label="Calls Content"
-                value={currentMessage.message_content || ""}
+                value={currentMessage.message_content}
                 onChange={(e) =>
                   setCurrentMessage((prev) => ({
                     ...prev,
@@ -597,26 +405,6 @@ const handleAddSlab = async () => {
                   }))
                 }
               />
-              <FormControl fullWidth sx={{ mt: 1 }}>
-                <InputLabel>Insert Key</InputLabel>
-                <Select
-                  value=""
-                  label="Insert Key"
-                  onChange={(e) => {
-                    const key = e.target.value;
-                    setCurrentMessage((prev) => ({
-                      ...prev,
-                      message_content: (prev.message_content || "") + `{{${key}}}`,
-                    }));
-                  }}
-                >
-                  {messageKeys.map((key) => (
-                    <MenuItem key={key} value={key}>
-                      {key}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
             </Grid>
           </Grid>
         </DialogContent>
@@ -625,16 +413,22 @@ const handleAddSlab = async () => {
           {currentMessage.id && (
             <Button
               color="error"
-              onClick={() => handleDelete(currentMessage.id)}
-              disabled={loading}
-              startIcon={<DeleteIcon />}
+              onClick={() => {
+                handleDelete(currentMessage.id);
+                handleEditClose();
+              }}
             >
               Delete
             </Button>
           )}
           <Button
-            onClick={currentMessage.id ? handleEditClose : handleAddClose}
-            disabled={loading}
+            onClick={() => {
+              if (currentMessage && currentMessage.id) {
+                handleEditClose();
+              } else {
+                handleAddClose();
+              }
+            }}
           >
             Cancel
           </Button>
@@ -642,22 +436,17 @@ const handleAddSlab = async () => {
             variant="contained"
             color="primary"
             onClick={handleUpdate}
-            disabled={!canSave || loading}
+            disabled={!canSave}
           >
-            {loading ? <CircularProgress size={24} /> : (currentMessage.id ? "Update" : "Save")}
+            {currentMessage.id ? "Update" : "Save"}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Add Slab Dialog */}
-      <Dialog open={openSlabDialog} onClose={() => !loading && setOpenSlabDialog(false)}>
-        <DialogTitle>Add New Slab Type</DialogTitle>
+      <Dialog open={openSlabDialog} onClose={() => setOpenSlabDialog(false)}>
+        <DialogTitle>Add New Slab</DialogTitle>
         <DialogContent>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
           <TextField
             autoFocus
             margin="dense"
@@ -665,107 +454,14 @@ const handleAddSlab = async () => {
             fullWidth
             value={newSlab}
             onChange={(e) => setNewSlab(e.target.value)}
-            sx={{ mb: 2 }}
-            disabled={loading}
-          />
-          <TextField
-            margin="dense"
-            label="Interval Days"
-            type="number"
-            fullWidth
-            value={intervalDays}
-            onChange={(e) => setIntervalDays(parseInt(e.target.value) || 7)}
-            inputProps={{ min: 1 }}
-            disabled={loading}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenSlabDialog(false)} disabled={loading}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleAddSlab} 
-            variant="contained" 
-            color="primary"
-            disabled={loading || !newSlab.trim()}
-          >
-            {loading ? <CircularProgress size={24} /> : "Add"}
+          <Button onClick={() => setOpenSlabDialog(false)}>Cancel</Button>
+          <Button onClick={handleAddSlab} variant="contained" color="primary">
+            Add
           </Button>
         </DialogActions>
-      </Dialog>
-
-      {/* View Dialog */}
-      <Dialog open={openViewDialog} onClose={handleViewClose} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          View Slab: {selectedMessage?.label_name}
-          <IconButton onClick={handleViewClose}>
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers>
-          {selectedMessage && (
-            <>
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                WhatsApp Content
-              </Typography>
-              <Box sx={{ 
-                p: 2, 
-                bgcolor: 'grey.100', 
-                borderRadius: 1, 
-                mb: 2,
-                whiteSpace: 'pre-wrap' 
-              }}>
-                {fillTemplate(selectedMessage.whatsapp_content, {
-                  first_name: "John",
-                  last_name: "Doe",
-                  created_on: new Date().toLocaleString(),
-                  address: "Mumbai, India",
-                  "config.SUPPORT_TEAM": "Mirror Support Team",
-                  otp: "123456",
-                })}
-              </Box>
-
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                Email Content
-              </Typography>
-              <Box sx={{ 
-                p: 2, 
-                bgcolor: 'grey.100', 
-                borderRadius: 1, 
-                mb: 2,
-                whiteSpace: 'pre-wrap' 
-              }}>
-                {fillTemplate(selectedMessage.email_content, {
-                  first_name: "John",
-                  last_name: "Doe",
-                  created_on: new Date().toLocaleString(),
-                  address: "Mumbai, India",
-                  "config.SUPPORT_TEAM": "Mirror Support Team",
-                  otp: "123456",
-                })}
-              </Box>
-
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                Calls Content
-              </Typography>
-              <Box sx={{ 
-                p: 2, 
-                bgcolor: 'grey.100', 
-                borderRadius: 1,
-                whiteSpace: 'pre-wrap' 
-              }}>
-                {fillTemplate(selectedMessage.message_content, {
-                  first_name: "John",
-                  last_name: "Doe",
-                  created_on: new Date().toLocaleString(),
-                  address: "Mumbai, India",
-                  "config.SUPPORT_TEAM": "Mirror Support Team",
-                  otp: "123456",
-                })}
-              </Box>
-            </>
-          )}
-        </DialogContent>
       </Dialog>
     </Layout>
   );

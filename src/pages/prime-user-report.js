@@ -1,6 +1,7 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import React, { useContext, useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import Cookies from "js-cookie";
 import api from "../../utils/api";
 import withAuth from "../../utils/withAuth";
 import { callAlert } from "../../redux/actions/alert";
@@ -8,14 +9,16 @@ import Layout from "@/components/Dashboard/layout";
 import PrimeUserTransactions from "@/components/UserReport/PrimeUserReport";
 import {
   Grid,
+  TableContainer,
+  Paper,
+  Typography,
+  Divider,
   Box,
   TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  Typography,
-  Paper,
 } from "@mui/material";
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -28,7 +31,14 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 
-// Styled components
+const Item = styled(Paper)(({ theme }) => ({
+  backgroundColor: theme.palette.mode === "dark" ? "#1A2027" : "#fff",
+  ...theme.typography.body2,
+  padding: theme.spacing(1),
+  textAlign: "center",
+  color: theme.palette.text.secondary,
+}));
+
 const StatCard = styled(Paper)(({ bgcolor }) => ({
   background: bgcolor,
   color: "#fff",
@@ -75,149 +85,186 @@ const StatIcon = styled("div")({
   zIndex: 1,
 });
 
-const FilterRow = styled(Box)({
+const FilterRow = styled(Box)(({ theme }) => ({
   background: "#f5faff",
   borderRadius: 12,
   boxShadow: "0 2px 12px 0 rgba(0,0,0,0.06)",
   padding: "16px",
   display: "flex",
   alignItems: "center",
-  gap: 16,
-  marginBottom: 16,
+  gap: 20,
+  marginBottom: 10,
   flexWrap: "nowrap",
-  overflowX: "auto", // scroll if screen is small
-});
+  justifyContent: "flex-start",
+}));
 
-// Component
-function PrimeUserReport() {
-  const dispatch = useDispatch();
+const getDate = (timeZone) => {
+  const dateString = timeZone;
+  const dateObject = new Date(dateString);
 
-  const [transactions, setTransactions] = useState([]);
-  const [report, setReport] = useState(null);
+  const year = dateObject.getFullYear();
+  const month = String(dateObject.getMonth() + 1).padStart(2, "0");
+  const day = String(dateObject.getDate()).padStart(2, "0");
+  const hours = String(dateObject.getHours()).padStart(2, "0");
+  const minutes = String(dateObject.getMinutes()).padStart(2, "0");
+
+  // Determine if it's AM or PM
+  const amOrPm = hours >= 12 ? "PM" : "AM";
+
+  // Convert hours to 12-hour format
+  const formattedHours = hours % 12 === 0 ? "12" : String(hours % 12);
+
+  const formattedDateTime = `${day}-${month}-${year} ${formattedHours}:${minutes} ${amOrPm}`;
+
+  return formattedDateTime;
+};
+
+function PrimeUserReport(props) {
+  const [showServiceTrans, setShowServiceTrans] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState("");
-  const [dateRangeFilter, setDateRangeFilter] = useState("all");
+  const [report, setReport] = useState(null);
+  let rows;
 
-  const [fromDate, setFromDate] = useState(dayjs().startOf("month"));
-  const [toDate, setToDate] = useState(dayjs());
+  if (showServiceTrans && showServiceTrans.length > 0) {
+    rows = [...showServiceTrans];
+  } else {
+    rows = [];
+  }
 
-  // Fetch transactions
+  const handleSearch = (text) => {
+    setSearchTerm(text);
+  };
+
+  const dispatch = useDispatch();
+  const currentDate = new Date();
+  const [fromDate, setFromDate] = React.useState(
+    dayjs(new Date(currentDate.getFullYear(), currentDate.getMonth(), 1))
+  );
+  const [toDate, setToDate] = React.useState(dayjs(getDate.date));
+
   useEffect(() => {
-    const fetchTransactions = async () => {
-      const payload = {
-        from_date: fromDate.format("YYYY-MM-DD"),
-        to_date: toDate.format("YYYY-MM-DD"),
+    const getTnx = async () => {
+      const reqData = {
+        from_date: fromDate.toISOString().split("T")[0],
+        to_date: toDate.toISOString().split("T")[0],
       };
 
       try {
-        const response = await api.post("/api/refferal-report/prime-user-report", payload);
+        const response = await api.post(
+          "/api/refferal-report/prime-user-report",
+          reqData
+        );
+
         if (response.status === 200) {
-          setTransactions(response.data.data || []);
-          setReport(response.data.report || null);
+          setShowServiceTrans(response.data.data);
+          setReport(response.data.report);
         }
       } catch (error) {
-        dispatch(
-          callAlert({
-            message: error?.response?.data?.error || error.message || "Something went wrong",
-            type: "FAILED",
-          })
-        );
+        if (error?.response?.data?.error) {
+          dispatch(
+            callAlert({ message: error.response.data.error, type: "FAILED" })
+          );
+        } else {
+          dispatch(callAlert({ message: error.message, type: "FAILED" }));
+        }
       }
     };
-    fetchTransactions();
+
+    if (fromDate || toDate) {
+      getTnx();
+    }
   }, [fromDate, toDate, dispatch]);
 
-  // Handlers
-  const handleSearchChange = (e) => setSearchTerm(e.target.value);
-  const handlePlanChange = (e) => setSelectedPlan(e.target.value);
-  const handleDateRangeChange = (e) => setDateRangeFilter(e.target.value);
-  const handleFromDateChange = (date) => setFromDate(date);
-  const handleToDateChange = (date) => setToDate(date);
+  const handleFromDateChange = (date) => {
+    setFromDate(date);
+  };
 
-  // Filter transactions
-  const filteredTransactions = transactions.filter((row) => {
-    const matchesSearch =
-      row.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      row.mlm_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      row.mobile?.includes(searchTerm) ||
-      row.referal_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      row.refer_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      row.refer_mobile?.includes(searchTerm) ||
-      row.plan?.toLowerCase().includes(searchTerm.toLowerCase());
+  const handleToDateChange = (date) => {
+    setToDate(date);
+  };
 
-    if (!matchesSearch) return false;
-    if (selectedPlan && row.plan?.toLowerCase() !== selectedPlan.toLowerCase()) return false;
+  const [selectedValue, setSelectedValue] = useState("");
 
-    // Apply date filter based on prime_date field
-    if (dateRangeFilter !== "all" && row.prime_date) {
-      // Extract day from prime_date (format: DD-MM-YYYY HH:mm:ss)
-      const dateParts = row.prime_date.split(' ')[0].split('-');
-      const day = parseInt(dateParts[0]);
-      
-      if (dateRangeFilter === "s1") {
-        // S1: 26-31 and 1-5
-        return (day >= 26 && day <= 31) || (day >= 1 && day <= 5);
-      } else if (dateRangeFilter === "s2") {
-        // S2: 6-15
-        return day >= 6 && day <= 15;
-      } else if (dateRangeFilter === "s3") {
-        // S3: 16-25
-        return day >= 16 && day <= 25;
-      }
-    }
+  const handleChange = (event) => {
+    setSelectedValue(event.target.value);
+  };
+  let filteredRows;
 
-    return true;
-  });
-
+  if (selectedValue != "") {
+    filteredRows = rows.filter((row) => {
+      return row.plan && row.plan.toLowerCase() === selectedValue.toLowerCase();
+    });
+  } else {
+    filteredRows = rows.filter((row) => {
+      return (
+        (row.name &&
+          row.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (row.mlm_id && row.mlm_id.includes(searchTerm)) ||
+        (row.mobile && row.mobile.includes(searchTerm)) ||
+        (row.plan &&
+          row.plan.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (row.referal_name &&
+          row.referal_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (row.refer_id &&
+          row.refer_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (row.refer_mobile &&
+          row.refer_mobile.toLowerCase().includes(searchTerm.toLowerCase()))
+        // Add conditions for other relevant columns
+      );
+    });
+  }
   return (
     <Layout>
       <Grid container spacing={3} sx={{ padding: 2 }}>
-        {/* Stats Cards */}
         <Grid item xs={12}>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2, justifyContent: "space-between" }}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 1,
+              flexWrap: "wrap",
+              mb: 1,
+              justifyContent: "space-between",
+            }}
+          >
             <StatCard bgcolor="#FFC107">
               <StatContent>
-                <StatValue>{report?.total_count || 0}</StatValue>
+                <StatValue>{report ? report.total_count : 0}</StatValue>
                 <StatLabel>Total Count</StatLabel>
               </StatContent>
               <StatIcon>
                 <LeaderboardIcon sx={{ fontSize: 64, color: "#fff" }} />
               </StatIcon>
             </StatCard>
-
             <StatCard bgcolor="#5C6BC0">
               <StatContent>
-                <StatValue>{report?.total_prime || 0}</StatValue>
+                <StatValue>{report ? report.total_prime : 0}</StatValue>
                 <StatLabel>Total Prime</StatLabel>
               </StatContent>
               <StatIcon>
                 <CheckCircleIcon sx={{ fontSize: 64, color: "#fff" }} />
               </StatIcon>
             </StatCard>
-
             <StatCard bgcolor="#26A69A">
               <StatContent>
-                <StatValue>{report?.total_primeB || 0}</StatValue>
-                <StatLabel>Total Prime B</StatLabel>
+                <StatValue>{report ? report.total_primeB : 0}</StatValue>
+                <StatLabel>Total Prime</StatLabel>
               </StatContent>
               <StatIcon>
                 <HighlightOffIcon sx={{ fontSize: 64, color: "#fff" }} />
               </StatIcon>
             </StatCard>
-
             <StatCard bgcolor="#EC407A">
               <StatContent>
-                <StatValue>{report?.total_hybrid || 0}</StatValue>
+                <StatValue>{report ? report.total_hybrid : 0}</StatValue>
                 <StatLabel>Total Hybrid</StatLabel>
               </StatContent>
               <StatIcon>
                 <DeleteForeverIcon sx={{ fontSize: 64, color: "#fff" }} />
               </StatIcon>
             </StatCard>
-
             <StatCard bgcolor="#FF9800">
               <StatContent>
-                <StatValue>{report?.total_booster || 0}</StatValue>
+                <StatValue>{report ? report.total_booster : 0}</StatValue>
                 <StatLabel>Total Booster</StatLabel>
               </StatContent>
               <StatIcon>
@@ -227,26 +274,57 @@ function PrimeUserReport() {
           </Box>
         </Grid>
 
-        {/* Filters */}
         <Grid item xs={12}>
           <FilterRow>
-            <Typography variant="h5" sx={{ minWidth: 180 }}>
-              Prime User Report
-            </Typography>
+            <Box
+              display={"inline-block"}
+              justifyContent={"space-between"}
+              alignItems={"right"}
+              style={{ width: "50%", verticalAlign: "center" }}
+            >
+              <Typography variant="h5" sx={{ padding: 1 }}>
+                Prime User Report
+              </Typography>
+            </Box>
 
-            <TextField
-              placeholder="Search"
-              variant="standard"
-              size="small"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              InputProps={{ startAdornment: <SearchIcon /> }}
-              sx={{ minWidth: 160 }}
-            />
-
-            <FormControl sx={{ minWidth: 160 }}>
-              <InputLabel>Transaction Type</InputLabel>
-              <Select value={selectedPlan} onChange={handlePlanChange}>
+            <Box
+              display={"inline-block"}
+              justifyContent={"space-between"}
+              alignItems={"center"}
+              mt={3}
+              mb={1}
+              sx={{ width: "20%", verticalAlign: "top" }}
+            >
+              <TextField
+                id="search"
+                placeholder="Search"
+                variant="standard"
+                mt={2}
+                size="small"
+                style={{ width: "100%" }}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: <SearchIcon />,
+                }}
+              />
+            </Box>
+            <FormControl sx={{ minWidth: 190 }}>
+              <InputLabel id="demo-simple-select-label">
+                Transaction Type
+              </InputLabel>
+              <Select
+                labelId="demo-simple-select-label"
+                id="demo-simple-select"
+                value={selectedValue}
+                label="Transaction Type"
+                onChange={handleChange}
+                sx={{
+                  minWidth: 140,
+                  maxWidth: 200,
+                  fontSize:"13px",background: "#fff", borderRadius: 1
+                }}
+              >
                 <MenuItem value="">Default</MenuItem>
                 <MenuItem value="Hybrid Prime">Hybrid Prime</MenuItem>
                 <MenuItem value="Booster Prime">Booster Prime</MenuItem>
@@ -262,34 +340,33 @@ function PrimeUserReport() {
               <DatePicker
                 label="From Date"
                 value={fromDate}
+                sx={{
+                  minWidth: 140,
+                  maxWidth: 170,
+                  background: "#fff",
+                  borderRadius: 1,
+                }}
+                format="DD-MM-YYYY"
                 onChange={handleFromDateChange}
-                sx={{ minWidth: 140 }}
               />
               <DatePicker
                 label="To Date"
                 value={toDate}
+                sx={{
+                  minWidth: 140,
+                  maxWidth: 170,
+                  background: "#fff",
+                  borderRadius: 1,
+                }}
+                format="DD-MM-YYYY"
                 onChange={handleToDateChange}
-                sx={{ minWidth: 140 }}
               />
             </LocalizationProvider>
-
-            <FormControl sx={{ minWidth: 150 }}>
-              <InputLabel>Date Range</InputLabel>
-              <Select value={dateRangeFilter} onChange={handleDateRangeChange}>
-                <MenuItem value="all">All</MenuItem>
-                <MenuItem value="s1">S1 (26-5)</MenuItem>
-                <MenuItem value="s2">S2 (6-15)</MenuItem>
-                <MenuItem value="s3">S3 (16-25)</MenuItem>
-              </Select>
-            </FormControl>
           </FilterRow>
         </Grid>
       </Grid>
-
-      {/* Transaction Table */}
-      <PrimeUserTransactions showServiceTrans={filteredTransactions} />
+      <PrimeUserTransactions showServiceTrans={filteredRows} />
     </Layout>
   );
 }
-
 export default withAuth(PrimeUserReport);

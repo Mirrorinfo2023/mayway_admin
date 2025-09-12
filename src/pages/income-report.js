@@ -1,6 +1,7 @@
 "use client";
-import React, { useEffect, useState, useMemo, useCallback } from "react";
-import { useDispatch } from "react-redux";
+import React, { useContext, useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import Cookies from "js-cookie";
 import api from "../../utils/api";
 import withAuth from "../../utils/withAuth";
 import { callAlert } from "../../redux/actions/alert";
@@ -16,7 +17,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  CircularProgress,
+  TableContainer,
 } from "@mui/material";
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -29,7 +30,6 @@ import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import { styled } from "@mui/material/styles";
 
-// Styled components
 const StatCard = styled(Paper)(({ bgcolor }) => ({
   background: bgcolor,
   color: "#fff",
@@ -90,110 +90,56 @@ const FilterRow = styled(Box)(({ theme }) => ({
   justifyContent: "flex-start",
 }));
 
-// Debounce hook for search
-const useDebounce = (value, delay) => {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-};
-
 function IncomeReport(props) {
-  const dispatch = useDispatch();
   const [showServiceTrans, setShowServiceTrans] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [report, setReport] = useState(null);
-  const [loading, setLoading] = useState(false);
-  
-  // Use debounced search term to reduce filtering operations
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
-  
+  let rows;
+  if (Array.isArray(showServiceTrans) && showServiceTrans.length > 0) {
+    rows = [...showServiceTrans];
+  } else {
+    rows = [];
+  }
+  const dispatch = useDispatch();
   const currentDate = new Date();
-  const [fromDate, setFromDate] = useState(
+  const [fromDate, setFromDate] = React.useState(
     dayjs(new Date(currentDate.getFullYear(), currentDate.getMonth(), 1))
   );
-  const [toDate, setToDate] = useState(dayjs());
-  const [selectedValue, setSelectedValue] = useState("");
+  const [toDate, setToDate] = React.useState(dayjs());
 
-  // Memoize the data fetching function
-  const getTnx = useCallback(async () => {
-    setLoading(true);
-    const reqData = {
-      from_date: fromDate.toISOString().split("T")[0],
-      to_date: toDate.toISOString().split("T")[0],
+  useEffect(() => {
+    const getTnx = async () => {
+      const reqData = {
+        from_date: fromDate.toISOString().split("T")[0],
+        to_date: toDate.toISOString().split("T")[0],
+      };
+
+      try {
+        const response = await api.post(
+          "/api/refferal-report/user-income-report",
+          reqData
+        );
+
+        if (response.status === 200) {
+          setShowServiceTrans(response.data.data);
+          setReport(response.data.report);
+        }
+      } catch (error) {
+        if (error?.response?.data?.error) {
+          dispatch(
+            callAlert({ message: error.response.data.error, type: "FAILED" })
+          );
+        } else {
+          dispatch(callAlert({ message: error.message, type: "FAILED" }));
+        }
+      }
     };
 
-    try {
-      const response = await api.post(
-        "/api/refferal-report/user-income-report",
-        reqData
-      );
-
-      if (response.status === 200) {
-        setShowServiceTrans(response.data.data || []);
-        setReport(response.data.report || null);
-      }
-    } catch (error) {
-      if (error?.response?.data?.error) {
-        dispatch(
-          callAlert({ message: error.response.data.error, type: "FAILED" })
-        );
-      } else {
-        dispatch(callAlert({ message: error.message, type: "FAILED" }));
-      }
-    } finally {
-      setLoading(false);
+    if (fromDate || toDate) {
+      getTnx();
     }
   }, [fromDate, toDate, dispatch]);
 
-  // Fetch data with useEffect
-  useEffect(() => {
-    getTnx();
-  }, [getTnx]);
-
-  // Memoize filtered rows for better performance
-  const filteredRows = useMemo(() => {
-    if (!Array.isArray(showServiceTrans) || showServiceTrans.length === 0) {
-      return [];
-    }
-
-    let result = [...showServiceTrans];
-
-    // Apply plan filter first (if selected)
-    if (selectedValue) {
-      result = result.filter(row => 
-        row.plan_name && 
-        row.plan_name.toLowerCase() === selectedValue.toLowerCase()
-      );
-    }
-
-    // Then apply search filter
-    if (debouncedSearchTerm) {
-      const term = debouncedSearchTerm.toLowerCase();
-      result = result.filter(row => 
-        (row.name && row.name.toLowerCase().includes(term)) ||
-        (row.mlm_id && row.mlm_id.includes(term)) ||
-        (row.mobile && row.mobile.includes(term)) ||
-        (row.transaction_id && row.transaction_id.includes(term)) ||
-        (row.type && row.type.toLowerCase().includes(term)) ||
-        (row.tran_for && row.tran_for.toLowerCase().includes(term)) ||
-        (row.details && row.details.toLowerCase().includes(term))
-      );
-    }
-
-    return result;
-  }, [showServiceTrans, selectedValue, debouncedSearchTerm]);
-
-  // Handler functions
   const handleFromDateChange = (date) => {
     setFromDate(date);
   };
@@ -202,13 +148,38 @@ function IncomeReport(props) {
     setToDate(date);
   };
 
-  const handlePlanChange = (event) => {
+  const [selectedValue, setSelectedValue] = useState("");
+
+  const handleChange = (event) => {
     setSelectedValue(event.target.value);
   };
+  let filteredRows;
 
-  const handleSearchChange = (event) => {
-    setSearchTerm(event.target.value);
-  };
+  if (selectedValue != "") {
+    filteredRows = rows.filter((row) => {
+      const matches =
+        row.plan_name &&
+        row.plan_name.toLowerCase() === selectedValue.toLowerCase();
+
+      return matches;
+    });
+  } else {
+    filteredRows = rows.filter((row) => {
+      const matches =
+        (row.name &&
+          row.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (row.mlm_id && row.mlm_id.includes(searchTerm)) ||
+        (row.mobile && row.mobile.includes(searchTerm)) ||
+        (row.transaction_id && row.transaction_id.includes(searchTerm)) ||
+        (row.type &&
+          row.type.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (row.tran_for &&
+          row.tran_for.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (row.details &&
+          row.details.toLowerCase().includes(searchTerm.toLowerCase()));
+      return matches;
+    });
+  }
 
   return (
     <Layout>
@@ -270,95 +241,87 @@ function IncomeReport(props) {
             <Typography variant="h5" sx={{ minWidth: "max-content" }}>
               Income Report
             </Typography>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Box
-                display={"inline-block"}
-                justifyContent={"space-between"}
-                alignItems={"center"}
-                mt={3}
-                mb={1}
-                sx={{ width: "200px", verticalAlign: "top" }}
+           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box
+              display={"inline-block"}
+              justifyContent={"space-between"}
+              alignItems={"center"}
+              mt={3}
+              mb={1}
+              sx={{ width: "200px", verticalAlign: "top" }}
+            >
+              <TextField
+                id="search"
+                placeholder="Search"
+                variant="standard"
+                mt={2}
+                size="small"
+                style={{ width: "100%" }}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: <SearchIcon />,
+                }}
+              />
+            </Box>
+            <FormControl sx={{ minWidth: 140  }}>
+              <InputLabel id="status-select-label">Prime</InputLabel>
+              <Select
+                labelId="status-select-label"
+                id="status-select"
+                value={selectedValue}
+                label="Status"
+                onChange={handleChange}
+                sx={{
+                  minWidth: 140,
+                  maxWidth: 170,
+                  fontSize:"13px",
+                }}
               >
-                <TextField
-                  id="search"
-                  placeholder="Search"
-                  variant="standard"
-                  mt={2}
-                  size="small"
-                  style={{ width: "100%" }}
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  InputProps={{
-                    startAdornment: <SearchIcon />,
-                  }}
-                />
-              </Box>
-              <FormControl sx={{ minWidth: 140 }}>
-                <InputLabel id="status-select-label">Prime</InputLabel>
-                <Select
-                  labelId="status-select-label"
-                  id="status-select"
-                  value={selectedValue}
-                  label="Status"
-                  onChange={handlePlanChange}
+                <MenuItem value="">Default</MenuItem>
+                <MenuItem value="Hybrid Prime">Hybrid Prime</MenuItem>
+                <MenuItem value="Booster Prime">Booster Plan</MenuItem>
+                <MenuItem value="Prime">Prime</MenuItem>
+                <MenuItem value="Prime B">Prime B</MenuItem>
+                <MenuItem value="Royality">Royality</MenuItem>
+                <MenuItem value="Repurchase">Repurchase</MenuItem>
+                <MenuItem value="Redeem">Redeem</MenuItem>
+              </Select>
+            </FormControl>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                <DatePicker
+                  label="From Date"
+                  value={fromDate}
+                  format="DD-MM-YYYY"
+                  onChange={handleFromDateChange}
                   sx={{
                     minWidth: 140,
                     maxWidth: 170,
-                    fontSize: "13px",
+                    background: "#fff",
+                    borderRadius: 1,
                   }}
-                >
-                  <MenuItem value="">Default</MenuItem>
-                  <MenuItem value="Hybrid Prime">Hybrid Prime</MenuItem>
-                  <MenuItem value="Booster Prime">Booster Plan</MenuItem>
-                  <MenuItem value="Prime">Prime</MenuItem>
-                  <MenuItem value="Prime B">Prime B</MenuItem>
-                  <MenuItem value="Royality">Royality</MenuItem>
-                  <MenuItem value="Repurchase">Repurchase</MenuItem>
-                  <MenuItem value="Redeem">Redeem</MenuItem>
-                </Select>
-              </FormControl>
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                  <DatePicker
-                    label="From Date"
-                    value={fromDate}
-                    format="DD-MM-YYYY"
-                    onChange={handleFromDateChange}
-                    sx={{
-                      minWidth: 140,
-                      maxWidth: 170,
-                      background: "#fff",
-                      borderRadius: 1,
-                    }}
-                  />
-                  <DatePicker
-                    label="To Date"
-                    value={toDate}
-                    format="DD-MM-YYYY"
-                    onChange={handleToDateChange}
-                    sx={{
-                      minWidth: 140,
-                      maxWidth: 170,
-                      background: "#fff",
-                      borderRadius: 1,
-                    }}
-                  />
-                </Box>
-              </LocalizationProvider>
+                />
+                <DatePicker
+                  label="To Date"
+                  value={toDate}
+                  format="DD-MM-YYYY"
+                  onChange={handleToDateChange}
+                  sx={{
+                    minWidth: 140,
+                    maxWidth: 170,
+                    background: "#fff",
+                    borderRadius: 1,
+                  }}
+                />
+              </Box>
+            </LocalizationProvider>
             </Box>
           </FilterRow>
         </Grid>
       </Grid>
-
-      {loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" py={4}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <IncomeTransactions showServiceTrans={filteredRows} />
-      )}
+      <IncomeTransactions showServiceTrans={filteredRows} />
     </Layout>
   );
 }
-
 export default withAuth(IncomeReport);

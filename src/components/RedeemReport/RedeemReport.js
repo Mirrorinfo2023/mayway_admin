@@ -339,7 +339,7 @@ const IncomeTransactions = ({ showServiceTrans }) => {
                       <TableCell>{(row.amount * 0.9).toFixed(2)}</TableCell>
                       <TableCell>{(row.amount * 0.1).toFixed(2)}</TableCell>
                       <TableCell>{row.trans_no}</TableCell>
-                      <TableCell>{row.payout_type}</TableCell>
+                      <TableCell></TableCell>
                       <TableCell>{row.account_number}</TableCell>
                       <TableCell>{row.account_holder}</TableCell>
                       <TableCell>{row.bank_name}</TableCell>
