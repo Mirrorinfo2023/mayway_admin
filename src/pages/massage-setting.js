@@ -198,7 +198,7 @@ function MessageSetting() {
       console.log("Adding new slab:", { name: newSlab.trim(), interval_days: intervalDays });
 
       // API call using fetch
-      const response = await fetch("http://localhost:4222/api/slab/add-slab", {
+      const response = await fetch("/api/slab/add-slab", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -247,7 +247,7 @@ function MessageSetting() {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch('http://localhost:4222/api/marketing/all');
+      const response = await fetch('/api/marketing/all');
       const data = await response.json();
 
       if (data.success) {
@@ -305,7 +305,7 @@ function MessageSetting() {
     setSuccess("");
 
     try {
-      const response = await fetch('http://localhost:4222/api/marketing/insert', {
+      const response = await fetch('/api/marketing/insert', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -348,7 +348,7 @@ function MessageSetting() {
       handleEditClose();
 
       // In a real implementation, you would call:
-      const response = await fetch(`http://localhost:4222/api/marketing/update/${currentMessage.id}`, {
+      const response = await fetch(`/api/marketing/update/${currentMessage.id}`, {
         method: 'post',
         headers: {
           'Content-Type': 'application/json',
@@ -377,7 +377,7 @@ function MessageSetting() {
       if (openEditDialog) handleEditClose();
 
       // In a real implementation, you would call:
-      const response = await fetch(`http://localhost:4222/api/marketing/delete/${id}`, {
+      const response = await fetch(`/api/marketing/delete/${id}`, {
         method: 'post'
       });
       // Then refresh the messages list
