@@ -1,0 +1,61 @@
+/* Emoji Picker Styles */
+.em-emoji-picker {
+  --border-radius: 12px;
+  --category-icon-size: 18px;
+  --font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-size: 13px;
+  --rgb-accent: 37, 99, 235;
+  --rgb-background: 255, 255, 255;
+  --rgb-color: 65, 65, 65;
+  --rgb-input: 245, 245, 245;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  height: 320px !important;
+  width: 300px !important;
+}
+
+.dark .em-emoji-picker {
+  --rgb-background: 36, 37, 38;
+  --rgb-color: 220, 220, 220;
+  --rgb-input: 59, 59, 59;
+}
+
+/* Add a small arrow at the bottom of the picker */
+.emoji-picker-arrow::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  right: 16px;
+  width: 16px;
+  height: 16px;
+  background: white;
+  transform: rotate(45deg);
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark .emoji-picker-arrow::after {
+  background: var(--rgb-background);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Animation for the emoji picker */
+.emoji-picker-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.emoji-picker-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms, transform 200ms;
+}
+
+.emoji-picker-exit {
+  opacity: 1;
+}
+
+.emoji-picker-exit-active {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 200ms, transform 200ms;
+} 
