@@ -73,6 +73,7 @@ let menuArray2 = [
   { redirect: 'redeem-report', name: 'Redeem Report', parent: 'networking' },
   { redirect: 'income-report', name: 'Income Report', parent: 'networking' },
   { redirect: 'prime-user-report', name: 'Prime User Report', parent: 'networking' },
+  { redirect: 'courses', name: 'Courses', parent: 'networking' },
   // { redirect: 'insurance-list', name: 'Insurance List', parent: 'networking' },
   // { redirect: 'prime-product-list', name: 'Prime Product Report', parent: 'networking' },
   // { redirect: 'package-purchase-list', name: 'Package Purchase Request', parent: 'networking' },

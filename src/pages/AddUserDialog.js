@@ -124,6 +124,7 @@ export default function AddUserDialog({ open, onClose }) {
         console.log("pincode is: ", pincode);
         try {
             const encPincode = DataEncrypt(JSON.stringify({ pincode }));
+            //    console.log("pincode is: ", encPincode);
             const resPincode = await api.post(
                 "/api/pincode/916e4eb592f2058c43a3face75b0f9d49ef2bd17",
                 { encPincode },

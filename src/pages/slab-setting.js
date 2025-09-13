@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import Layout from "@/components/Dashboard/layout";
 import {
   Grid,
@@ -12,7 +12,6 @@ import {
   TableRow,
   Paper,
   Typography,
-  Divider,
   Box,
   TextField,
   Dialog,
@@ -26,6 +25,10 @@ import {
   Select,
   InputAdornment,
   IconButton,
+  Alert,
+  CircularProgress,
+  Chip,
+  Divider,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
@@ -33,11 +36,16 @@ import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
 
+// Styled table cells
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
-    backgroundColor: theme.palette.primary.main,
+    backgroundColor: theme.palette.primary.dark,
     color: theme.palette.common.white,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    fontSize: "0.85rem",
   },
   [`&.${tableCellClasses.body}`]: {
     fontSize: 14,
@@ -48,53 +56,36 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   "&:nth-of-type(odd)": {
     backgroundColor: theme.palette.action.hover,
   },
+  "&:hover": {
+    backgroundColor: theme.palette.action.selected,
+    transition: "0.2s",
+  },
   "&:last-child td, &:last-child th": {
     border: 0,
   },
 }));
 
-// Demo data
-const testMessages = [
-  {
-    id: 1,
-    label_name: "Welcome Message",
-    whatsapp_content:
-      "Welcome to our service! We are excited to have you on board.",
-    email_content:
-      "Dear Customer,\n\nWelcome to our platform! We look forward to serving you.",
-    message_content: "Welcome! Thank you for joining us.",
-    date_time: new Date().toLocaleString(),
+const DialogWrapper = styled(Dialog)(({ theme }) => ({
+  "& .MuiPaper-root": {
+    borderRadius: 12,
+    padding: theme.spacing(1),
   },
-  {
-    id: 2,
-    label_name: "OTP Message",
-    whatsapp_content: "Your OTP is 123456. Valid for 5 minutes.",
-    email_content:
-      "Your one-time password is 123456\n\nThis OTP is valid for 5 minutes.",
-    message_content: "OTP: 123456 (Valid for 5 mins)",
-    date_time: new Date().toLocaleString(),
-  },
-];
+}));
 
 function SlabSetting() {
-  const [messages, setMessages] = useState(testMessages);
+  const [messages, setMessages] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [openViewDialog, setOpenViewDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openAddDialog, setOpenAddDialog] = useState(false);
-  const [openSlabDialog, setOpenSlabDialog] = useState(false); // NEW dialog for slabs
+  const [openSlabDialog, setOpenSlabDialog] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
-
-  // Dynamic slab options
-  const [labelOptions, setLabelOptions] = useState([
-    "Welcome Message",
-    "OTP Message",
-    "Payment Success",
-    "Password Reset",
-    "Order Confirmation",
-  ]);
-
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [labelOptions, setLabelOptions] = useState([]);
   const [newSlab, setNewSlab] = useState("");
+  const [intervalDays, setIntervalDays] = useState(7);
 
   const [currentMessage, setCurrentMessage] = useState({
     id: "",
@@ -104,117 +95,92 @@ function SlabSetting() {
     message_content: "",
   });
 
-  // Robust id generator
-  const nextId = useMemo(
-    () => (messages.length ? Math.max(...messages.map((m) => m.id)) + 1 : 1),
-    [messages]
-  );
-
-  const handleSearch = (value) => setSearchTerm(value);
-
-  const handleViewOpen = (message) => {
-    setSelectedMessage(message);
-    setOpenViewDialog(true);
-  };
-  const handleViewClose = () => setOpenViewDialog(false);
-
-  const handleEditOpen = (message) => {
-    setCurrentMessage(message);
-    setOpenEditDialog(true);
-  };
-  const handleEditClose = () => setOpenEditDialog(false);
-
-  const resetCurrent = () =>
-    setCurrentMessage({
-      id: "",
-      label_name: "",
-      whatsapp_content: "",
-      email_content: "",
-      message_content: "",
-    });
-
-  const handleAddOpen = () => {
-    resetCurrent();
-    setOpenAddDialog(true);
-  };
-  const handleAddClose = () => setOpenAddDialog(false);
-
-  const handleUpdate = () => {
-    const timeNow = new Date().toLocaleString();
-
-    if (currentMessage.id) {
-      // Update existing
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === currentMessage.id
-            ? { ...currentMessage, date_time: timeNow }
-            : msg
-        )
-      );
-      handleEditClose();
-    } else {
-      // Add new
-      setMessages((prev) => [
-        ...prev,
-        { ...currentMessage, id: nextId, date_time: timeNow },
+  // --- fetch slabs ---
+  useEffect(() => {
+    setLoading(true);
+    setTimeout(() => {
+      const testMessages = [
+        {
+          id: 1,
+          label_name: "Welcome Message",
+          whatsapp_content: "Welcome to our service {{first_name}}!",
+          email_content: "Dear {{first_name}}, Welcome!",
+          message_content: "Hi {{first_name}} 👋",
+          date_time: new Date().toLocaleString(),
+        },
+        {
+          id: 2,
+          label_name: "OTP Message",
+          whatsapp_content: "Your OTP is {{otp}}",
+          email_content: "Your OTP is {{otp}}, valid for 5 mins",
+          message_content: "OTP {{otp}}",
+          date_time: new Date().toLocaleString(),
+        },
+      ];
+      setMessages(testMessages);
+      setLabelOptions([
+        "Welcome Message",
+        "OTP Message",
+        "Payment Success",
+        "Password Reset",
       ]);
-      handleAddClose();
-    }
-  };
-
-  const handleDelete = (id) => {
-    setMessages((prev) => prev.filter((msg) => msg.id !== id));
-  };
+      setLoading(false);
+    }, 600);
+  }, []);
 
   const filteredMessages = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
     if (!q) return messages;
-    return messages.filter((m) => {
-      const hay =
-        `${m.label_name} ${m.whatsapp_content} ${m.email_content} ${m.message_content}`.toLowerCase();
-      return hay.includes(q);
-    });
+    return messages.filter((m) =>
+      `${m.label_name} ${m.whatsapp_content} ${m.email_content} ${m.message_content}`
+        .toLowerCase()
+        .includes(q)
+    );
   }, [messages, searchTerm]);
-
-  // Simple validation for Save button
-  const canSave =
-    currentMessage.label_name &&
-    (currentMessage.whatsapp_content ||
-      currentMessage.email_content ||
-      currentMessage.message_content);
-
-  // Handle adding new slab
-  const handleAddSlab = () => {
-    if (newSlab.trim() !== "") {
-      setLabelOptions([newSlab, ...labelOptions]); // Add to top
-      setCurrentMessage((prev) => ({ ...prev, label_name: newSlab })); // Auto-select
-      setNewSlab("");
-      setOpenSlabDialog(false);
-    }
-  };
 
   return (
     <Layout>
       <Grid container spacing={2} sx={{ p: 2 }}>
+        {error && (
+          <Grid item xs={12}>
+            <Alert severity="error" onClose={() => setError("")}>
+              {error}
+            </Alert>
+          </Grid>
+        )}
+        {success && (
+          <Grid item xs={12}>
+            <Alert severity="success" onClose={() => setSuccess("")}>
+              {success}
+            </Alert>
+          </Grid>
+        )}
+
+        {/* Table Section */}
         <Grid item xs={12}>
-          <TableContainer component={Paper} elevation={3}>
+          <Paper elevation={4} sx={{ borderRadius: 3, overflow: "hidden" }}>
+            {/* Header */}
             <Box
               display="flex"
               justifyContent="space-between"
               alignItems="center"
               p={2}
+              sx={{ background: "linear-gradient(45deg, #1976d2, #1565c0)" }}
             >
-              <Typography variant="h5" color="primary" fontWeight={600}>
-                Marketing — Slab Settings
+              <Typography variant="h6" color="white" fontWeight={600}>
+                📊 Marketing — Slab Settings
               </Typography>
-
               <Box display="flex" alignItems="center" gap={2}>
                 <TextField
                   variant="outlined"
                   size="small"
                   placeholder="Search slabs..."
                   value={searchTerm}
-                  onChange={(e) => handleSearch(e.target.value)}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  sx={{
+                    backgroundColor: "white",
+                    borderRadius: 2,
+                  }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -223,246 +189,129 @@ function SlabSetting() {
                     ),
                   }}
                 />
-                <Button variant="contained" color="primary" onClick={handleAddOpen}>
+                <Button
+                  variant="contained"
+                  sx={{
+                    backgroundColor: "white",
+                    color: "primary.main",
+                    fontWeight: 600,
+                    borderRadius: 2,
+                    textTransform: "none",
+                    "&:hover": { backgroundColor: "#f5f5f5" },
+                  }}
+                  startIcon={<AddIcon />}
+                  onClick={() => setOpenAddDialog(true)}
+                >
                   Add New Slab
                 </Button>
               </Box>
             </Box>
 
-            <Table sx={{ minWidth: 900 }}>
-              <TableHead>
-                <TableRow>
-                  <StyledTableCell>SR No.</StyledTableCell>
-                  <StyledTableCell>Slab Name</StyledTableCell>
-                  <StyledTableCell>WhatsApp Content</StyledTableCell>
-                  <StyledTableCell>Email Content</StyledTableCell>
-                  <StyledTableCell>Calls</StyledTableCell>
-                  <StyledTableCell>Date &amp; Time</StyledTableCell>
-                  <StyledTableCell align="center">Actions</StyledTableCell>
-                </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {filteredMessages.length === 0 ? (
-                  <StyledTableRow>
-                    <StyledTableCell colSpan={7} align="center">
-                      No slabs found.
-                    </StyledTableCell>
-                  </StyledTableRow>
-                ) : (
-                  filteredMessages.map((message, index) => (
-                    <StyledTableRow key={message.id}>
-                      <StyledTableCell>{index + 1}</StyledTableCell>
-                      <StyledTableCell>{message.label_name}</StyledTableCell>
-
-                      <StyledTableCell>
-                        {message.whatsapp_content.length > 40
-                          ? `${message.whatsapp_content.substring(0, 40)}…`
-                          : message.whatsapp_content}
-                      </StyledTableCell>
-
-                      <StyledTableCell>
-                        {message.email_content.length > 40
-                          ? `${message.email_content.substring(0, 40)}…`
-                          : message.email_content}
-                      </StyledTableCell>
-
-                      <StyledTableCell>
-                        {message.message_content.length > 40
-                          ? `${message.message_content.substring(0, 40)}…`
-                          : message.message_content}
-                      </StyledTableCell>
-
-                      <StyledTableCell>
-                        {message.date_time || "—"}
-                      </StyledTableCell>
-
-                      <StyledTableCell align="center">
-                        <IconButton
-                          onClick={() => handleViewOpen(message)}
-                          color="primary"
-                          title="View"
-                        >
-                          <VisibilityIcon />
-                        </IconButton>
-                        <IconButton
-                          onClick={() => handleEditOpen(message)}
-                          color="secondary"
-                          title="Edit"
-                        >
-                          <EditIcon />
-                        </IconButton>
+            {/* Table */}
+            {loading ? (
+              <Box display="flex" justifyContent="center" p={3}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <StyledTableCell>SR No.</StyledTableCell>
+                    <StyledTableCell>Slab Name</StyledTableCell>
+                    <StyledTableCell>WhatsApp</StyledTableCell>
+                    <StyledTableCell>Email</StyledTableCell>
+                    <StyledTableCell>Calls</StyledTableCell>
+                    <StyledTableCell>Date & Time</StyledTableCell>
+                    <StyledTableCell align="center">Actions</StyledTableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredMessages.length === 0 ? (
+                    <StyledTableRow>
+                      <StyledTableCell colSpan={7} align="center">
+                        No slabs found.
                       </StyledTableCell>
                     </StyledTableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                  ) : (
+                    filteredMessages.map((message, index) => (
+                      <StyledTableRow key={message.id}>
+                        <StyledTableCell>{index + 1}</StyledTableCell>
+                        <StyledTableCell>
+                          <Chip
+                            label={message.label_name}
+                            color="primary"
+                            sx={{ fontWeight: 600 }}
+                          />
+                        </StyledTableCell>
+                        <StyledTableCell>
+                          {message.whatsapp_content}
+                        </StyledTableCell>
+                        <StyledTableCell>{message.email_content}</StyledTableCell>
+                        <StyledTableCell>
+                          {message.message_content}
+                        </StyledTableCell>
+                        <StyledTableCell>{message.date_time}</StyledTableCell>
+                        <StyledTableCell align="center">
+                          <IconButton color="primary">
+                            <VisibilityIcon />
+                          </IconButton>
+                          <IconButton color="secondary">
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton color="error">
+                            <DeleteIcon />
+                          </IconButton>
+                        </StyledTableCell>
+                      </StyledTableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            )}
+          </Paper>
         </Grid>
       </Grid>
 
-      {/* Edit/Add Dialog */}
-      <Dialog
-        open={openEditDialog || openAddDialog}
-        onClose={() => {
-          if (currentMessage && currentMessage.id) {
-            handleEditClose();
-          } else {
-            handleAddClose();
-          }
-        }}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle sx={{ bgcolor: "primary.main", color: "white" }}>
-          {currentMessage.id ? "Edit Slab" : "Add New Slab"}
-          <IconButton
-            onClick={() => {
-              if (currentMessage && currentMessage.id) {
-                handleEditClose();
-              } else {
-                handleAddClose();
-              }
-            }}
-            sx={{ position: "absolute", right: 8, top: 8, color: "white" }}
-          >
-            <CloseIcon />
-          </IconButton>
+      {/* Styled Dialog Example */}
+      <DialogWrapper open={openAddDialog} onClose={() => setOpenAddDialog(false)}>
+        <DialogTitle
+          sx={{
+            bgcolor: "primary.main",
+            color: "white",
+            fontWeight: 600,
+            borderRadius: "8px 8px 0 0",
+          }}
+        >
+          Add New Slab
         </DialogTitle>
-
-        <DialogContent dividers sx={{ pt: 3 }}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sx={{ display: "flex", gap: 1 }}>
-              <FormControl fullWidth>
-                <InputLabel id="edit-label-select">Slab Name</InputLabel>
-                <Select
-                  labelId="edit-label-select"
-                  label="Slab Name"
-                  value={currentMessage.label_name || ""}
-                  onChange={(e) =>
-                    setCurrentMessage((prev) => ({
-                      ...prev,
-                      label_name: e.target.value,
-                    }))
-                  }
-                >
-                  {labelOptions.map((label, idx) => (
-                    <MenuItem key={idx} value={label}>
-                      {label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <IconButton color="primary" onClick={() => setOpenSlabDialog(true)}>
-                <AddIcon />
-              </IconButton>
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                multiline
-                minRows={3}
-                label="WhatsApp Content"
-                value={currentMessage.whatsapp_content}
-                onChange={(e) =>
-                  setCurrentMessage((prev) => ({
-                    ...prev,
-                    whatsapp_content: e.target.value,
-                  }))
-                }
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                multiline
-                minRows={3}
-                label="Email Content"
-                value={currentMessage.email_content}
-                onChange={(e) =>
-                  setCurrentMessage((prev) => ({
-                    ...prev,
-                    email_content: e.target.value,
-                  }))
-                }
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                multiline
-                minRows={3}
-                label="Calls Content"
-                value={currentMessage.message_content}
-                onChange={(e) =>
-                  setCurrentMessage((prev) => ({
-                    ...prev,
-                    message_content: e.target.value,
-                  }))
-                }
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-
-        <DialogActions>
-          {currentMessage.id && (
-            <Button
-              color="error"
-              onClick={() => {
-                handleDelete(currentMessage.id);
-                handleEditClose();
-              }}
-            >
-              Delete
-            </Button>
-          )}
-          <Button
-            onClick={() => {
-              if (currentMessage && currentMessage.id) {
-                handleEditClose();
-              } else {
-                handleAddClose();
-              }
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleUpdate}
-            disabled={!canSave}
-          >
-            {currentMessage.id ? "Update" : "Save"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Add Slab Dialog */}
-      <Dialog open={openSlabDialog} onClose={() => setOpenSlabDialog(false)}>
-        <DialogTitle>Add New Slab</DialogTitle>
-        <DialogContent>
+        <DialogContent dividers>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Fill in the details below to add a new slab type.
+          </Typography>
+          <Divider sx={{ mb: 2 }} />
+          <TextField label="Slab Name" fullWidth sx={{ mb: 2 }} />
           <TextField
-            autoFocus
-            margin="dense"
-            label="Slab Name"
+            label="WhatsApp Content"
             fullWidth
-            value={newSlab}
-            onChange={(e) => setNewSlab(e.target.value)}
+            multiline
+            minRows={3}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            label="Email Content"
+            fullWidth
+            multiline
+            minRows={3}
+            sx={{ mb: 2 }}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenSlabDialog(false)}>Cancel</Button>
-          <Button onClick={handleAddSlab} variant="contained" color="primary">
-            Add
+          <Button onClick={() => setOpenAddDialog(false)}>Cancel</Button>
+          <Button variant="contained" color="primary">
+            Save
           </Button>
         </DialogActions>
-      </Dialog>
+      </DialogWrapper>
     </Layout>
   );
 }

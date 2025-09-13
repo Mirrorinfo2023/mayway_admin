@@ -277,22 +277,22 @@ function RedeemReport(props) {
                         lineHeight: 20,
                         minWidth: 140,
                         maxWidth: 170,
-                        background:"#fff"
+                        background: "#fff"
                       }}
                       format="DD-MM-YYYY"
                       onChange={handleFromDateChange}
-                    
-                 
+
+
                     />
                     <DatePicker
                       value={toDate}
-                        label="To Date"
+                      label="To Date"
                       sx={{
                         margin: 1,
                         lineHeight: 20,
                         minWidth: 140,
                         maxWidth: 170,
-                        background:"#fff"
+                        background: "#fff"
                       }}
                       format="DD-MM-YYYY"
                       onChange={handleToDateChange}

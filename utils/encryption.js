@@ -14,7 +14,7 @@ const substitutionMap = {
     1: '9', 2: '8', 3: '7', 4: '6', 5: '5',
     6: '4', 7: '3', 8: '2', 9: '1', 0: '0'
 };
-  
+
 export function DataEncrypt(string) {
     const receprocalData = string.split('').map(char => substitutionMap[char] || char).join('');
     const encryptData = Buffer.from(receprocalData).toString('base64');

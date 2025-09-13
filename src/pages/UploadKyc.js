@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Dialog,
     DialogTitle,
@@ -37,6 +37,7 @@ const steps = ["Aadhaar", "PAN", "Bank", "Status"];
 function UploadKyc({ open, onClose }) {
     const [activeStep, setActiveStep] = useState(0);
     const [formData, setFormData] = useState({
+        user_id: "",
         // Aadhaar
         aadhaarNo: "",
         address: "",
@@ -97,6 +98,16 @@ function UploadKyc({ open, onClose }) {
 
     const handleNext = () => validateStep() && setActiveStep((p) => p + 1);
     const handleBack = () => setActiveStep((p) => p - 1);
+    useEffect(() => {
+        // This will run once when the component mounts
+        const uid = localStorage.getItem("uid");
+        if (uid) {
+            setFormData((prev) => ({
+                ...prev,
+                user_id: uid,
+            }));
+        }
+    }, []);
 
     const handleSubmit = async () => {
         setLoading(true);
@@ -105,6 +116,7 @@ function UploadKyc({ open, onClose }) {
 
             // Encrypt all text fields before appending
             const encryptedFields = {
+                user_id: formData.user_id,
                 aadhaarNo: formData.aadhaarNo,
                 address: formData.address,
                 panNo: formData.panNo,
@@ -122,16 +134,18 @@ function UploadKyc({ open, onClose }) {
             });
 
             // Append files normally
-            if (formData.aadhaarFront) data.append("aadhaarFront", formData.aadhaarFront);
-            if (formData.aadhaarBack) data.append("aadhaarBack", formData.aadhaarBack);
-            if (formData.panPhoto) data.append("panPhoto", formData.panPhoto);
-            if (formData.bankDoc) data.append("bankDoc", formData.bankDoc);
+            if (formData.panPhoto) data.append("panImage", formData.panPhoto);
+            if (formData.aadhaarFront) data.append("aadharImage", formData.aadhaarFront);
+            if (formData.aadhaarBack) data.append("aadharBackImage", formData.aadhaarBack);
+            if (formData.bankDoc) data.append("chequeBookImage", formData.bankDoc);
+
 
             console.log("data is ", data)
-            await api.post("/api/users/550ecdddb5b8b023dda91594810884c12456d0a3", data, {
+            const res = await api.post("/api/users/550ecdddb5b8b023dda91594810884c12456d0a3", data, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
+            console.log("res is ", res)
             alert("KYC submitted successfully!");
             onClose();
         } catch (err) {
@@ -421,7 +435,6 @@ function UploadKyc({ open, onClose }) {
                 },
             }}
         >
-
             <DialogTitle
                 sx={{
                     fontWeight: 700,
