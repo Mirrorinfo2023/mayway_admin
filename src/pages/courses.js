@@ -53,24 +53,43 @@ const CourseReportTable = () => {
     const [confirmAction, setConfirmAction] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
 
-    const [rows, setRows] = useState([
-        {
-            id: 1,
-            date: "2025-09-13 12:30",
-            category: "Frontend",
-            name: "React Basics",
-            link: "https://react.dev",
-            hidden: false,
-        },
-        {
-            id: 2,
-            date: "2025-09-12 15:00",
-            category: "Backend",
-            name: "Node.js Crash Course",
-            link: "https://nodejs.org",
-            hidden: false,
-        },
-    ]);
+    const [rows, setRows] = useState([]); // start empty
+
+    // 🔹 Fetch course videos from API
+    useEffect(() => {
+        const fetchVideos = async () => {
+            try {
+                const encReq = DataEncrypt(JSON.stringify({}));
+                const res = await api.post(
+                    "/api/course_video/b7ca2cdfce8d1ec0812385316c76e50d31e6f693",
+                    { encReq }
+                );
+
+                if (res.data?.success) {
+                    const decData = DataDecrypt(res.data.data);
+                    console.log("Fetched videos:", decData);
+
+                    // assuming API returns { videos: [...] }
+                    setRows(
+                        (decData.videos || []).map((vid, idx) => ({
+                            id: vid.id || idx + 1,
+                            date: vid.created_at || new Date().toLocaleString(),
+                            category: vid.category_name || "",
+                            name: vid.title || "",
+                            link: vid.video_link || "",
+                            hidden: false,
+                        }))
+                    );
+                } else {
+                    console.error("Failed to fetch videos:", res.data?.message);
+                }
+            } catch (err) {
+                console.error("Error fetching videos:", err);
+            }
+        };
+
+        fetchVideos();
+    }, []);
 
     useEffect(() => {
         // This will run once when the component mounts
