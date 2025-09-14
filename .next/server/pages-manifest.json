@@ -3,5 +3,10 @@
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
   "/login": "pages/login.js",
-  "/": "pages/index.js"
+  "/dashboard": "pages/dashboard.js",
+  "/get-banners": "pages/get-banners.js",
+  "/courses": "pages/courses.js",
+  "/get-meeting-enroll-report": "pages/get-meeting-enroll-report.js",
+  "/user-details": "pages/user-details.js",
+  "/profit-return": "pages/profit-return.js"
 }
