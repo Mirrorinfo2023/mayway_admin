@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import API from "../../../utils/api"
 import axios from "axios";
 import {
   Box,
@@ -15,7 +16,7 @@ import {
   TableRow,
   TableCell,
 } from "@mui/material";
-
+import api from "../../../utils/api"
 function StatSummary({ stats }) {
   const statItems = [
     { label: "Total Users", value: stats.total },
@@ -65,14 +66,7 @@ export default function Dashboard() {
   const [timeframe, setTimeframe] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  useEffect(() => {
-    axios
-      .get("api/admin/dashboardData")
-      .then((res) => {
-        if (res.data.success) setData(res.data);
-      })
-      .catch((err) => console.error("Failed to fetch dashboard data:", err));
-  }, []);
+
 
   const toLocalDate = (dateStr) => {
     if (!dateStr) return null;
@@ -100,6 +94,30 @@ export default function Dashboard() {
       return true;
     });
   }, [timeframe, statusFilter, data.latestUsers]);
+
+  useEffect(() => {
+    console.log("useEffect called");
+
+    const fetchDashboardData = async () => {
+      try {
+        const res = await API.get("/api/admin/dashboardData"); // axios GET
+        console.log("Axios response: ", res);
+
+        // Axios puts actual response in res.data
+        const result = res.data;
+
+        if (result.success) {
+          setData(result);
+        }
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+
 
   return (
     <Box sx={{ p: 3, background: "#f7f9fb", minHeight: "100vh" }}>

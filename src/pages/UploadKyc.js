@@ -108,52 +108,62 @@ function UploadKyc({ open, onClose }) {
             }));
         }
     }, []);
+    // const token = localStorage.getItem("token"); // or sessionStorage
 
     const handleSubmit = async () => {
         setLoading(true);
         try {
             const data = new FormData();
 
-            // Encrypt all text fields before appending
+            // Encrypted text fields
             const encryptedFields = {
                 user_id: formData.user_id,
-                aadhaarNo: formData.aadhaarNo,
-                address: formData.address,
-                panNo: formData.panNo,
-                nominee: formData.nominee,
-                nomineeRelation: formData.nomineeRelation,
-                accNo: formData.accNo,
-                bankName: formData.bankName,
-                holderName: formData.holderName,
-                ifsc: formData.ifsc,
-                status: formData.status,
+                pan_number: formData.panNo,
+                aadhar_number: formData.aadhaarNo,
+                account_number: formData.accNo,
+                account_holder: formData.holderName,
+                bank_name: formData.bankName,
+                ifsc_code: formData.ifsc,
+                nominee_name: formData.nominee,
+                nominee_relation: formData.nomineeRelation,
+                full_address: formData.address,
             };
 
             Object.keys(encryptedFields).forEach((key) => {
-                data.append(key, DataEncrypt(JSON.stringify(encryptedFields[key])));
+                if (encryptedFields[key]) {
+                    data.append(key, DataEncrypt(encryptedFields[key]));  // ✅ no stringify
+                }
             });
 
-            // Append files normally
+            // Files
             if (formData.panPhoto) data.append("panImage", formData.panPhoto);
             if (formData.aadhaarFront) data.append("aadharImage", formData.aadhaarFront);
             if (formData.aadhaarBack) data.append("aadharBackImage", formData.aadhaarBack);
             if (formData.bankDoc) data.append("chequeBookImage", formData.bankDoc);
 
+            // console.log("token is:", token)
+            const res = await api.post(
+                "/api/users/550ecdddb5b8b023dda91594810884c12456d0a3",
+                data,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                        // "Authorization": `Bearer ${token}`,  // ✅ required
+                    },
+                }
+            );
 
-            console.log("data is ", data)
-            const res = await api.post("/api/users/550ecdddb5b8b023dda91594810884c12456d0a3", data, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-
-            console.log("res is ", res)
+            console.log("res is ", res);
             alert("KYC submitted successfully!");
             onClose();
         } catch (err) {
-            console.error(err);
+            console.error("KYC Submit Error:", err.response?.data || err.message);
             alert("Error submitting KYC");
         }
         setLoading(false);
     };
+
+
 
     const fieldStyle = {
 

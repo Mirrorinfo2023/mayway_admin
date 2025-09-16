@@ -62,11 +62,14 @@ const UserName = ({ handleChange, onForgotPassword }) => {
             console.log("respomce is", response)
             if (response.status === 200) {
                 setAlert({ open: true, type: true, message: 'SignIn successfully!' });
-                const responseData = response.data.data;
+
+                const responseData = response.data.data; // user info
+                const token = response.data.token;       // token from top-level
 
                 localStorage.setItem('role', 'user');
                 localStorage.setItem('uid', responseData.id);
                 localStorage.setItem('email', responseData.email);
+                localStorage.setItem('token', token);  // ✅ set token correctly
                 localStorage.setItem('name', `${responseData.first_name} ${responseData.last_name}`);
                 localStorage.setItem('mobile', responseData.mobile);
                 localStorage.setItem('employee_role', responseData.role_name);
@@ -77,9 +80,11 @@ const UserName = ({ handleChange, onForgotPassword }) => {
                 Cookies.set('name', `${responseData.first_name} ${responseData.last_name}`);
                 Cookies.set('mobile', responseData.mobile);
                 Cookies.set('employee_role', responseData.role_name, { expires: 1 });
+                Cookies.set('token', token, { expires: 1 }); // ✅ set token in cookies too
 
                 route.push('/dashboard');
-            } else {
+            }
+            else {
                 setAlert({ open: true, type: false, message: response.data.message });
             }
         } catch (error) {

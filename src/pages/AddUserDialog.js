@@ -8,11 +8,12 @@ import {
     DialogContent,
     DialogActions,
     Typography,
+    MenuItem,
     InputAdornment,
 } from "@mui/material";
 import api from "../../utils/api"; // axios instance
 import { DataEncrypt, DataDecrypt } from "../../utils/encryption";
-
+import axios from "axios"
 // Icons
 import PersonIcon from "@mui/icons-material/Person";
 import EmailIcon from "@mui/icons-material/Email";
@@ -36,6 +37,8 @@ const smallInputProps = (icon) => ({
         ),
     },
 });
+import { Autocomplete } from "@mui/material";
+
 export default function AddUserDialog({ open, onClose }) {
     const [formData, setFormData] = useState({
         referred_by: "",
@@ -53,6 +56,7 @@ export default function AddUserDialog({ open, onClose }) {
         region: "",
         dob: "",
     });
+    const [postOffices, setPostOffices] = useState([]);
 
     const [errors, setErrors] = useState({});
     const [referralStatus, setReferralStatus] = useState(null); // null, true, false
@@ -107,69 +111,111 @@ export default function AddUserDialog({ open, onClose }) {
         if (!formData.city) tempErrors.city = "City is required";
         if (!formData.address) tempErrors.address = "Address is required";
 
-        if (!formData.referred_by) tempErrors.referred_by = "Referral ID is required";
-
-        if (!formData.postOfficeName.trim()) tempErrors.postOfficeName = "Post Office Name is required";
-        if (!formData.circle.trim()) tempErrors.circle = "Circle is required";
-        if (!formData.district.trim()) tempErrors.district = "District is required";
-        if (!formData.division.trim()) tempErrors.division = "Division is required";
-        if (!formData.region.trim()) tempErrors.region = "Region is required";
+        // if (!formData.circle.trim()) tempErrors.circle = "Circle is required";
+        // if (!formData.district.trim()) tempErrors.district = "District is required";
+        // if (!formData.division.trim()) tempErrors.division = "Division is required";
+        // if (!formData.region.trim()) tempErrors.region = "Region is required";
         if (!formData.dob.trim()) tempErrors.dob = "Date of Birth is required";
 
         setErrors(tempErrors);
         return Object.keys(tempErrors).length === 0;
     };
 
-    const handleFetchAddress = async (pincode) => {
-        console.log("pincode is: ", pincode);
+    // 🔹 Fetch state
+    const fetchState = async (stateName) => {
         try {
-            const encPincode = DataEncrypt(JSON.stringify({ pincode }));
-            //    console.log("pincode is: ", encPincode);
-            const resPincode = await api.post(
-                "/api/pincode/916e4eb592f2058c43a3face75b0f9d49ef2bd17",
-                { encPincode },
+            console.log("state is ", stateName)
+            const encReq = DataEncrypt(JSON.stringify({ state: stateName }));
+            const res = await api.post(
+                "/api/state/d23d7537f9a6da6fd195810c82699cb2f81c3d11",
+                { encReq },
                 { headers: { "Content-Type": "application/json" } }
             );
-            const pincodeData = DataDecrypt(resPincode.data);
+
+            const stateData = DataDecrypt(res.data);
+            console.log("stateData is", stateData);
+
+            if (stateData?.status === 200 && stateData?.data?.length > 0) {
+                // Do something with stateData
+                return stateData.data;
+            }
+        } catch (error) {
+            console.error("Failed to fetch state:", error);
+        }
+        return null;
+    };
+
+    // 🔹 Fetch city
+    const fetchCity = async (cityName) => {
+        try {
+            console.log("cityName is ", cityName)
+            const encReq = DataEncrypt(JSON.stringify({ city: cityName }));
+            const res = await api.post(
+                "/api/city/d23d7537f9a6da6fd195810c82699cb2f81c3d11",
+                { encReq },
+                { headers: { "Content-Type": "application/json" } }
+            );
+
+            const cityData = DataDecrypt(res.data);
+            console.log("cityData is", cityData);
+
+            if (cityData?.status === 200 && cityData?.data?.length > 0) {
+                // Do something with cityData
+                return cityData.data;
+            }
+        } catch (error) {
+            console.error("Failed to fetch city:", error);
+        }
+        return null;
+    };
+
+    // 🔹 Main method: fetch address by pincode, then fetch state & city
+    const handleFetchAddress = async (pincode) => {
+        if (!pincode || pincode.trim() === "") {
+            alert("Please enter a valid pincode");
+            return;
+        }
+
+        try {
+            const encReq = DataEncrypt(JSON.stringify({ pincode }));
+            const res = await api.post(
+                "/api/pincode/916e4eb592f2058c43a3face75b0f9d49ef2bd17",
+                { encReq },
+                { headers: { "Content-Type": "application/json" } }
+            );
+
+            const pincodeData = DataDecrypt(res.data);
+            console.log("pincodeData is ", pincodeData);
 
             if (pincodeData?.status === 200 && pincodeData?.data?.length > 0) {
-                const office = pincodeData.data[0];
+                const officeList = pincodeData.data;
+                const firstOffice = officeList[0];
 
-                // 🔹 Fetch state details
-                const encState = DataEncrypt(JSON.stringify({ state: office.State }));
-                const resState = await api.post(
-                    "/api/state/d23d7537f9a6da6fd195810c82699cb2f81c3d11",
-                    { encState },
-                    { headers: { "Content-Type": "application/json" } }
-                );
-                const stateData = DataDecrypt(resState.data);
-
-                // 🔹 Fetch city details
-                const encCity = DataEncrypt(JSON.stringify({ district: office.District }));
-                const resCity = await api.post(
-                    "/api/city/e2caa4a86f1cda61fa7efc12c7a8791a8c59bc90",
-                    { encCity },
-                    { headers: { "Content-Type": "application/json" } }
-                );
-                const cityData = DataDecrypt(resCity.data);
+                const fullAddress = `${firstOffice.Office_name || ""}, ${firstOffice.District || ""}, ${firstOffice.State || ""} - ${firstOffice.Pincode || ""}`;
 
                 setFormData((prev) => ({
                     ...prev,
-                    postOfficeName: office.Office_name || "Default PO",
-                    circle: office.Circle || "Maharashtra",
-                    district: office.District || "AHMEDNAGAR",
-                    division: office.Division || "Shrirampur",
-                    region: office.Region || "Pune",
-                    state: stateName,
-                    city: cityName,
-                    // address: `${office.Office_name || "Default PO"}, ${cityName}, ${stateName} - ${office.Pincode || pincode}`,
+                    postOfficeName: firstOffice.Office_name?.trim() || "",
+                    circle: firstOffice.Circle?.trim() || "",
+                    district: firstOffice.District?.trim() || "",
+                    division: firstOffice.Division?.trim() || "",
+                    region: firstOffice.Region?.trim() || "",
+                    state: firstOffice.State?.trim() || "",
+                    city: firstOffice.District?.trim() || "",
+                    address: fullAddress.trim(),
                 }));
+
+                // save all post offices for Autocomplete
+                setPostOffices(officeList);
             }
+
+
         } catch (error) {
             console.error("Failed to fetch address:", error);
         }
     };
 
+    console.log("postoffice is:", postOffices)
 
     // Verify Referral ID API
     const handleVerifyReferral = async () => {
@@ -192,25 +238,26 @@ export default function AddUserDialog({ open, onClose }) {
             const decrypted = DataDecrypt(response.data);
             console.log("Referral verified:", decrypted);
 
-            if (decrypted.status === 200) {
-                setReferralStatus(true);
+            if (decrypted.status === 200 && decrypted.data?.name) {
+                setReferralStatus({ success: true, name: decrypted.data.name });
                 setErrors((prev) => ({ ...prev, referred_by: "" }));
             } else {
-                setReferralStatus(false);
+                setReferralStatus({ success: false, message: decrypted.message || "Invalid referral ID" });
             }
         } catch (error) {
             console.error("Referral verification failed:", error);
-            setReferralStatus(false);
+            setReferralStatus({ success: false, message: "Verification failed. Try again." });
         } finally {
             setLoadingReferral(false);
         }
     };
 
+
     // Create User API
     const handleCreateUser = async () => {
         if (!validateForm()) return;
 
-        if (referralStatus !== true) {
+        if (!referralStatus?.success) {
             alert("Please verify a valid referral ID before registering.");
             return;
         }
@@ -226,8 +273,8 @@ export default function AddUserDialog({ open, onClose }) {
                 { headers: { "Content-Type": "application/json" } }
             );
 
-            const decrypted = DataDecrypt(response.data);
-            console.log("✅ Registration Success:", decrypted);
+            // const decrypted = (response.data);
+            console.log("✅ Registration Success:", response.message);
             alert("User registered successfully!");
 
             // ✅ Reset form fields
@@ -267,6 +314,45 @@ export default function AddUserDialog({ open, onClose }) {
         }
     };
 
+    // Set formData from a selected post office object
+    const setOfficeData = (office) => {
+        if (!office) return;
+
+        const fullAddress = `${office.Office_name}, ${office.District}, ${office.State} - ${office.Pincode}`;
+
+        setFormData((prev) => ({
+            ...prev,
+            postOfficeName: office.Office_name,
+            circle: office.Circle?.trim() || prev.circle,
+            district: office.District?.trim() || prev.district,
+            division: office.Division?.trim() || prev.division,
+            region: office.Region?.trim() || prev.region,
+            state: office.State?.trim() || prev.state,
+            city: office.District?.trim() || prev.city,
+            address: fullAddress,
+        }));
+    };
+
+    // Find office by name
+    const handleSelectPostOffice = (name) => {
+        const office = postOffices.find((o) => o.Office_name === name);
+        setOfficeData(office);
+    };
+
+
+    // Find office by full address
+    const handleSelectAddress = (address) => {
+        const office = postOffices.find(
+            (o) =>
+                `${o.Office_name}, ${o.District}, ${o.State} - ${o.Pincode}` === address
+        );
+        if (office) {
+            setOfficeData(office);
+        } else {
+            // free typed address
+            setFormData((prev) => ({ ...prev, address }));
+        }
+    };
 
     // helper for small inputs + icons
     const smallInputProps = (icon) => ({
@@ -391,20 +477,22 @@ export default function AddUserDialog({ open, onClose }) {
                             helperText={errors.mobile}
                         />
                     </Grid>
-
-                    {/* Pincode */}
+                    {/* Date of Birth */}
                     <Grid item xs={12} sm={6}>
                         <TextField
                             fullWidth
-                            name="pincode"
-                            label="Pincode"
-                            value={formData.pincode}
+                            name="dob"
+                            label="Date of Birth"
+                            type="date"
+                            value={formData.dob}
                             onChange={handleInputChange}
-                            {...smallInputProps(<LocationOnIcon />)}
-                            error={!!errors.pincode}
-                            helperText={errors.pincode}
+                            InputLabelProps={{ shrink: true }}
+                            {...smallInputProps(<PersonIcon />)}
+                            error={!!errors.dob}
+                            helperText={errors.dob}
                         />
                     </Grid>
+
 
                     {/* Referral ID + Verify button */}
                     <Grid item xs={12} sm={6}>
@@ -449,16 +537,31 @@ export default function AddUserDialog({ open, onClose }) {
                                 ),
                             }}
                         />
-                        {referralStatus === true && (
+                        {referralStatus?.success && (
                             <Typography sx={{ color: "green", mt: 0.5, fontSize: "0.75rem" }}>
-                                Referral Valid ✅
+                                Referral Valid ✅ User: {referralStatus.name}
                             </Typography>
                         )}
-                        {referralStatus === false && (
+                        {referralStatus?.success === false && (
                             <Typography sx={{ color: "red", mt: 0.5, fontSize: "0.75rem" }}>
-                                Referral Invalid ❌
+                                {referralStatus.message || "Referral Invalid ❌"}
                             </Typography>
                         )}
+
+                    </Grid>
+
+                    {/* Pincode */}
+                    <Grid item xs={12} sm={6}>
+                        <TextField
+                            fullWidth
+                            name="pincode"
+                            label="Pincode"
+                            value={formData.pincode}
+                            onChange={handleInputChange}
+                            {...smallInputProps(<LocationOnIcon />)}
+                            error={!!errors.pincode}
+                            helperText={errors.pincode}
+                        />
                     </Grid>
 
                     {/* State */}
@@ -475,6 +578,28 @@ export default function AddUserDialog({ open, onClose }) {
                         />
                     </Grid>
 
+
+
+                    {/* Post Office Name */}
+                    <Grid item xs={12} sm={6}>
+                        <TextField
+                            select
+                            fullWidth
+                            label="Post Office Name"
+                            value={formData.postOfficeName || ""}
+                            onChange={(e) => handleSelectPostOffice(e.target.value)}
+                            {...smallInputProps(<HomeIcon />)}
+                            error={!!errors.postOfficeName}
+                            helperText={errors.postOfficeName}
+                        >
+                            {postOffices.map((office) => (
+                                <MenuItem key={office.id} value={office.Office_name}>
+                                    {office.Office_name}
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                    </Grid>
+
                     {/* City */}
                     <Grid item xs={12} sm={6}>
                         <TextField
@@ -489,107 +614,30 @@ export default function AddUserDialog({ open, onClose }) {
                         />
                     </Grid>
 
-                    {/* Post Office */}
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            fullWidth
-                            name="postOfficeName"
-                            label="Post Office Name"
-                            value={formData.postOfficeName}
-                            InputProps={{ readOnly: true }}
-                            {...smallInputProps(<HomeIcon />)}
-                            error={!!errors.postOfficeName}
-                            helperText={errors.postOfficeName}
-                        />
-                    </Grid>
-
-                    {/* <Grid item xs={12} sm={6}>
-                        <TextField
-                            fullWidth
-                            name="circle"
-                            label="Circle"
-                            value={formData.circle}
-                            InputProps={{ readOnly: true }}
-                            {...smallInputProps(<PublicIcon />)}
-                            error={!!errors.circle}
-                            helperText={errors.circle}
-                        />
-                    </Grid>
-
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            fullWidth
-                            name="district"
-                            label="District"
-                            value={formData.district}
-                            InputProps={{ readOnly: true }}
-                            {...smallInputProps(<LocationCityIcon />)}
-                            error={!!errors.district}
-                            helperText={errors.district}
-                        />
-                    </Grid>
-
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            fullWidth
-                            name="division"
-                            label="Division"
-                            value={formData.division}
-                            InputProps={{ readOnly: true }}
-                            {...smallInputProps(<LocationCityIcon />)}
-                            error={!!errors.division}
-                            helperText={errors.division}
-                        />
-                    </Grid>
-
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            fullWidth
-                            name="region"
-                            label="Region"
-                            value={formData.region}
-                            InputProps={{ readOnly: true }}
-                            {...smallInputProps(<LocationCityIcon />)}
-                            error={!!errors.region}
-                            helperText={errors.region}
-                        />
-                    </Grid> */}
-
-                    {/* Date of Birth */}
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            fullWidth
-                            name="dob"
-                            label="Date of Birth"
-                            type="date"
-                            value={formData.dob}
-                            onChange={handleInputChange}
-                            InputLabelProps={{ shrink: true }}
-                            {...smallInputProps(<PersonIcon />)}
-                            error={!!errors.dob}
-                            helperText={errors.dob}
-                        />
-                    </Grid>
-
-                    {/* Address */}
+                    {/* Address (with full suggestions) */}
                     <Grid item xs={12}>
-                        <TextField
+                        <Autocomplete
+                            freeSolo
                             fullWidth
-                            multiline
-                            minRows={2} // 👈 sets height (3 lines tall by default)
-                            maxRows={5} // optional: prevents it from growing too big
-                            name="address"
-                            label="Address"
-                            value={formData.address}
-                            onChange={handleInputChange}
-                            {...smallInputProps1(<HomeIcon />)}
-                            error={!!errors.address}
-                            helperText={errors.address}
+                            options={postOffices.map(
+                                (o) => `${o.Office_name}, ${o.District}, ${o.State} - ${o.Pincode}`
+                            )}
+                            value={formData.address || ""}
+                            onChange={(e, newValue) => handleSelectAddress(newValue)}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Address"
+                                    multiline
+                                    minRows={2}
+                                    maxRows={5}
+                                    {...smallInputProps1(<HomeIcon />)}
+                                    error={!!errors.address}
+                                    helperText={errors.address}
+                                />
+                            )}
                         />
-
                     </Grid>
-
-
 
                 </Grid>
             </DialogContent>

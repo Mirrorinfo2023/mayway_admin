@@ -56,40 +56,40 @@ const CourseReportTable = () => {
     const [rows, setRows] = useState([]); // start empty
 
     // 🔹 Fetch course videos from API
-    useEffect(() => {
-        const fetchVideos = async () => {
-            try {
-                const encReq = DataEncrypt(JSON.stringify({}));
-                const res = await api.post(
-                    "/api/course_video/b7ca2cdfce8d1ec0812385316c76e50d31e6f693",
-                    { encReq }
-                );
+    // useEffect(() => {
+    //     const fetchVideos = async () => {
+    //         try {
+    //             const encReq = DataEncrypt(JSON.stringify({}));
+    //             const res = await api.post(
+    //                 "/api/course_video/b7ca2cdfce8d1ec0812385316c76e50d31e6f693",
+    //                 { encReq }
+    //             );
 
-                if (res.data?.success) {
-                    const decData = DataDecrypt(res.data.data);
-                    console.log("Fetched videos:", decData);
+    //             if (res.data?.success) {
+    //                 const decData = DataDecrypt(res.data.data);
+    //                 console.log("Fetched videos:", decData);
 
-                    // assuming API returns { videos: [...] }
-                    setRows(
-                        (decData.videos || []).map((vid, idx) => ({
-                            id: vid.id || idx + 1,
-                            date: vid.created_at || new Date().toLocaleString(),
-                            category: vid.category_name || "",
-                            name: vid.title || "",
-                            link: vid.video_link || "",
-                            hidden: false,
-                        }))
-                    );
-                } else {
-                    console.error("Failed to fetch videos:", res.data?.message);
-                }
-            } catch (err) {
-                console.error("Error fetching videos:", err);
-            }
-        };
+    //                 // assuming API returns { videos: [...] }
+    //                 setRows(
+    //                     (decData.videos || []).map((vid, idx) => ({
+    //                         id: vid.id || idx + 1,
+    //                         date: vid.created_at || new Date().toLocaleString(),
+    //                         category: vid.category_name || "",
+    //                         name: vid.title || "",
+    //                         link: vid.video_link || "",
+    //                         hidden: false,
+    //                     }))
+    //                 );
+    //             } else {
+    //                 console.error("Failed to fetch videos:", res.data?.message);
+    //             }
+    //         } catch (err) {
+    //             console.error("Error fetching videos:", err);
+    //         }
+    //     };
 
-        fetchVideos();
-    }, []);
+    //     fetchVideos();
+    // }, []);
 
     useEffect(() => {
         // This will run once when the component mounts
@@ -102,23 +102,24 @@ const CourseReportTable = () => {
         }
     }, []);
 
+    console.log("formta is ", formData)
     // 🔹 Fetch categories from API
-    useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                const encReq = DataEncrypt(JSON.stringify({}));
-                const res = await api.post("/api/course_video/get-category", { encReq });
-                console.log("res is: ", res)
-                if (res.data?.success) {
-                    const decData = DataDecrypt(res.data.data);
-                    setCategories(decData.categories || []);
-                }
-            } catch (err) {
-                console.error("Failed to fetch categories:", err);
-            }
-        };
-        fetchCategories();
-    }, []);
+    // useEffect(() => {
+    //     const fetchCategories = async () => {
+    //         try {
+    //             const encReq = DataEncrypt(JSON.stringify({}));
+    //             const res = await api.post("/api/course_video/get-category", { encReq });
+    //             console.log("res is: ", res)
+    //             if (res.data?.success) {
+    //                 const decData = DataDecrypt(res.data.data);
+    //                 setCategories(decData.categories || []);
+    //             }
+    //         } catch (err) {
+    //             console.error("Failed to fetch categories:", err);
+    //         }
+    //     };
+    //     fetchCategories();
+    // }, []);
 
     // Dialog controls
     const handleOpen = () => {
@@ -154,8 +155,9 @@ const CourseReportTable = () => {
             formPayload.append("video_link", formData.link);
             formPayload.append("category_id", formData.category); // must be the ID from category list
             // if (selectedFile) formPayload.append("file", selectedFile);
+            formPayload.append("user_id", formData.user_id); // pass logged-in user id
 
-            const res = await api.post("/api/course_video/bd1288f00cc1808cbfb80d733cb27679270cf32f", formPayload, {
+            const res = await api.post("/api/courses_video/bd1288f00cc1808cbfb80d733cb27679270cf32f", formPayload, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
@@ -188,9 +190,10 @@ const CourseReportTable = () => {
             formDataToSend.append("description", newCategoryDescription);
             // Send the current user_id from formData
             formDataToSend.append("category_id", formData.user_id || 0);
-            if (selectedCategoryFile) formDataToSend.append("file", selectedCategoryFile);
+            
+            console.log("formDataToSend are: ", formDataToSend)
 
-            const res = await api.post("/api/course_video/add-category", formDataToSend, {
+            const res = await api.post("/api/courses_video/addcategory", formDataToSend, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
@@ -402,12 +405,12 @@ const CourseReportTable = () => {
                                 <DialogTitle
                                     sx={{
                                         background: "linear-gradient(90deg, #2196f3 0%, #21cbf3 100%)",
-                                        color: "#fff",
+                                        color: "#fff", mb: 2
                                     }}
                                 >
                                     Add New Category
                                 </DialogTitle>
-                                <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
+                                <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, }}>
                                     {/* Category Name */}
                                     <TextField
                                         label="Category Name *"
@@ -428,31 +431,6 @@ const CourseReportTable = () => {
                                         onChange={(e) => setNewCategoryDescription(e.target.value)}
                                     />
 
-                                    {/* Parent Category (optional) */}
-                                    {/* <Select
-                                        fullWidth
-                                        value={newCategoryParent || ""}
-                                        onChange={(e) => setNewCategoryParent(e.target.value)}
-                                        displayEmpty
-                                    >
-                                        <MenuItem value="">Select Parent Category (optional)</MenuItem>
-                                        {categories.map((cat, idx) => (
-                                            <MenuItem key={idx} value={cat}>
-                                                {cat}
-                                            </MenuItem>
-                                        ))}
-                                    </Select> */}
-
-                                    {/* Image Upload (optional) */}
-                                    <Button variant="outlined" component="label">
-                                        Upload  category Image(optional)
-                                        <input
-                                            type="file"
-                                            hidden
-                                            onChange={(e) => setSelectedCategoryFile(e.target.files[0])}
-                                        />
-                                    </Button>
-                                    {selectedCategoryFile && <Typography>{selectedCategoryFile.name}</Typography>}
                                 </DialogContent>
                                 <DialogActions>
                                     <Button onClick={() => setCategoryOpen(false)} color="secondary">

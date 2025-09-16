@@ -101,9 +101,10 @@ function TransactionHistory(props) {
       // const encryptedData = DataEncrypt(JSON.stringify(originalString));
       // console.log(encryptedData);
       // const decryptedObject = DataDecrypt(encryptedData);
-      // console.log(decryptedObject);
+      console.log("reqData is:", reqData);
       try {
         const response = await api.post("/api/report/user-details", reqData);
+        console.log("response is: ", response)
         if (response.status === 200) {
           setShowServiceTrans(response.data.data);
           setTotalPageCount(response.data.totalPageCount);
@@ -209,36 +210,30 @@ function TransactionHistory(props) {
     flexWrap: "nowrap",
     justifyContent: "flex-start",
   }));
-  const filteredRows = rows;
-  //   const filteredRows = rows.filter(row => {
-  //     return (
-  //       (row.first_name && row.first_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-  //       (row.last_name && row.last_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-  //       (row.mlm_id && row.mlm_id.includes(searchTerm)) ||
-  //       (row.mobile && row.mobile.includes(searchTerm)) ||
-  //       (row.email && row.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-  //       (row.ref_first_name && row.first_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-  //       (row.ref_last_name && row.ref_last_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-  //       (row.ref_mlm_id && row.mlm_id.includes(searchTerm)) ||
-  //       (row.ref_mobile && row.mobile.includes(searchTerm)) ||
-  //       (row.ref_email && row.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  //       // Add conditions for other relevant columns
-  //     );
 
-  // });
+  const filteredRows = rows.filter(row => {
+    const term = searchTerm.toLowerCase();
 
-  // const handleChangePage = (event, newPage) => {
-  //   setLoading(true); // Set loading state to true
-  //   // Your logic to fetch data for the new page
-  //   // Once data is fetched, you can set loading state back to false
-  // };
+    if (selectedValue) {
+      // if a filter is selected, check only that field
+      return row[selectedValue] && String(row[selectedValue]).toLowerCase().includes(term);
+    } else {
+      // otherwise search in multiple fields
+      return (
+        (row.first_name && row.first_name.toLowerCase().includes(term)) ||
+        (row.last_name && row.last_name.toLowerCase().includes(term)) ||
+        (row.mlm_id && row.mlm_id.includes(term)) ||
+        (row.mobile && row.mobile.includes(term)) ||
+        (row.email && row.email.toLowerCase().includes(term))
+      );
+    }
+  });
 
-  // // Function to handle rows per page change
-  // const handleChangeRowsPerPage = (event) => {
-  //   setLoading(true); // Set loading state to true
-  //   // Your logic to fetch data for the new rows per page
-  //   // Once data is fetched, you can set loading state back to false
-  // };
+  const dateFilteredRows = filteredRows.filter(row => {
+    const created = new Date(row.created_on);
+    return (!fromDate || created >= new Date(fromDate)) &&
+      (!toDate || created <= new Date(toDate));
+  });
 
   return (
     <Layout>
