@@ -29,6 +29,7 @@ import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { styled } from "@mui/material/styles";
 import UploadKyc from "./UploadKyc";
+import axios from "axios";
 
 const drawWidth = 220;
 
@@ -125,6 +126,7 @@ function KycReport() {
       };
       try {
         const response = await api.post("/api/users/get-kyc-report", reqData);
+        console.log("response is: ",response)
         if (response.status === 200) {
           setShowServiceTrans(response.data.data || []);
           setMasterReport(response.data.report || {});
@@ -140,6 +142,7 @@ function KycReport() {
     };
     getTnx();
   }, [fromDate, toDate, dispatch]);
+
 
   const [selectedValue, setSelectedValue] = useState("");
 

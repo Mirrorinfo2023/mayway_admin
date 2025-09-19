@@ -11,7 +11,10 @@ import {
   TableRow,
   Typography,
   Link,
+     // ✅ added
 } from "@mui/material";
+import TextField from "@mui/material/TextField";
+
 import { useState } from "react";
 import api from "../../../utils/api";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
@@ -19,7 +22,7 @@ import { styled } from "@mui/material/styles";
 import * as React from "react";
 import Modal from "@mui/material/Modal";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
-import { TextareaAutosize } from "@mui/base/TextareaAutosize";
+
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
 const style = {
@@ -188,47 +191,48 @@ const KycTransactions = ({ showServiceTrans }) => {
   };
 
   const handleOKButtonClick = async () => {
-    // alert(status);
     if (!addMoneyReqId) {
-      console.error("addMoneyReqId is missing.");
+      alert("addMoneyReqId is missing.");
       return;
     }
+
     let note = "";
     let action = "";
     if (status === 1) {
       note = "Approve";
       action = "Approve";
     } else if (status === 2) {
-      note = rejectionReason; // Use the rejectionReason state
+      note = rejectionReason;
       action = "Reject";
-    } else {
-      note = "";
-      action = "";
     }
 
     const requestData = {
-      status: status,
-      note: note,
+      status,
+      note,
       id: addMoneyReqId,
-      action: action,
+      action,
     };
+
+    console.log("update-kyc-status requested data are:", requestData);
+
     try {
-      const response = await api.post(
-        "/api/users/update-kyc-status",
-        requestData
-      );
+      const response = await api.post("/api/users/update-kyc-status", requestData);
+
       if (response.data.status === 200) {
         location.reload();
       } else {
-        console.log("Failed to update status.");
+        console.error("Backend error:", response.data);
+        alert(`❌ ${response.data.message}\n${response.data.errors?.join("\n") || ""}`);
       }
     } catch (error) {
       console.error("Error:", error);
+      alert(`🔥 Request failed: ${error.response?.data?.message || error.message}`);
     }
 
     handleCloseModal1();
     handleCloseModal2();
   };
+
 
   return (
     <main className="p-6 space-y-6">
@@ -480,53 +484,72 @@ const KycTransactions = ({ showServiceTrans }) => {
                         </Modal>
 
                         <Modal
+                        fullWidth
                           open={openModal2}
                           onClose={handleCloseModal2}
                           aria-labelledby="modal-modal-title"
                           aria-describedby="modal-modal-description"
                         >
                           <Box
-                            sx={style}
-                            alignItems={"center"}
-                            justifyContent={"space-between"}
+                            sx={{
+                              ...style,
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 2,
+                              width:"50%"
+                            }}
                           >
                             <HelpOutlineOutlinedIcon
-                              sx={{ fontSize: 40, marginLeft: 20 }}
-                              color="warning"
-                              alignItems={"center"}
+                              sx={{ fontSize: 40, color: "error.main", alignSelf: "center" }}
                             />
+
                             <Typography
                               id="modal-modal-title"
                               variant="h6"
                               component="h2"
+                              align="center"
+                              fontWeight="bold"
                             >
-                              Are you sure to Reject the KYC?
+                              Are you sure you want to Reject the KYC?
                             </Typography>
-                            <TextareaAutosize
-                              aria-label="minimum height"
-                              minRows={10}
-                              placeholder="Enter Rejection Reason"
-                              style={{ width: 400 }}
-                              value={rejectionReason}
+
+                            <Typography variant="body2" color="text.secondary" align="center">
+                              Please provide a reason for rejection. This will be visible to the user.
+                            </Typography>
+
+                            {/* Styled input box */}
+                            <TextField
+                              label="Rejection Reason"
+                              placeholder="Enter rejection reason..."
+                              value={rejectionReason || ""}
                               onChange={handleTextareaChange}
+                              fullWidth
+                              multiline
+                              rows={4}
+                              variant="outlined"
+                              required
                             />
-                            <Typography
-                              id="modal-modal-description"
-                              sx={{ mt: 2 }}
-                              alignItems={"center"}
-                            >
+
+                            <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
+                              <Button
+                                variant="outlined"
+                                color="inherit"
+                                onClick={handleCloseModal2}
+                              >
+                                Cancel
+                              </Button>
                               <Button
                                 variant="contained"
                                 size="large"
-                                color="success"
+                                color="error"
                                 onClick={handleOKButtonClick}
-                                sx={{ marginLeft: 12, marginLeft: 20 }}
                               >
-                                OK
+                                Reject KYC
                               </Button>
-                            </Typography>
+                            </Box>
                           </Box>
                         </Modal>
+
                       </StyledTableCell>
                       <StyledTableCell>{row.rejection_reason}</StyledTableCell>
                     </StyledTableRow>

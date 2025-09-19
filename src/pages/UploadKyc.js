@@ -38,7 +38,7 @@ import axios from "axios";
 function UploadKyc({ open, onClose }) {
     const [activeStep, setActiveStep] = useState(0);
     const [formData, setFormData] = useState({
-        user_id: "111113",
+        user_id: "111166",
         // Aadhaar
         aadhaarNo: "",
         address: "",
@@ -138,7 +138,7 @@ function UploadKyc({ open, onClose }) {
 
             // ✅ Reset form and stepper after success
             setFormData({
-                user_id: "",
+                
                 aadhaarNo: "",
                 address: "",
                 aadhaarFront: null,
