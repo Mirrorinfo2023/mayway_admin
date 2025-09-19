@@ -1,8 +1,0 @@
-{
-  "/_app": "pages/_app.js",
-  "/_error": "pages/_error.js",
-  "/_document": "pages/_document.js",
-  "/user-team": "pages/user-team.js",
-  "/update-user-info": "pages/update-user-info.js",
-  "/user-details": "pages/user-details.js"
-}
