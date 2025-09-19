@@ -37,7 +37,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
-
+import axios from "axios";
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
     backgroundColor: theme.palette.primary.main,
@@ -183,6 +183,7 @@ function MessageSetting() {
     templateType: "",
     body: "",
   });
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const handleAddSlab = async () => {
     if (newSlab.trim() === "") {
@@ -198,7 +199,7 @@ function MessageSetting() {
       console.log("Adding new slab:", { name: newSlab.trim(), interval_days: intervalDays });
 
       // API call using fetch
-      const response = await fetch("/api/slab/add-slab", {
+      const response = await fetch(`${API_BASE}api/slab/add-slab`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -243,24 +244,33 @@ function MessageSetting() {
     fetchMessages();
   }, []);
 
-  const fetchMessages = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const response = await fetch('/api/marketing/all');
-      const data = await response.json();
 
-      if (data.success) {
-        setMessages(data.data);
-      } else {
-        setError("Failed to fetch messages");
-      }
-    } catch (error) {
-      setError("Failed to connect to server");
-    } finally {
-      setLoading(false);
+const fetchMessages = async () => {
+  setLoading(true);
+  setError("");
+  try {
+    const response = await axios.get(`${API_BASE}api/marketing/all`);
+
+    if (response.data.success) {
+      setMessages(response.data.data);
+    } else {
+      setError("Failed to fetch messages");
     }
-  };
+  } catch (error) {
+    if (error.response) {
+      // Server responded with status code not in range 2xx
+      setError(`Server error: ${error.response.status}`);
+    } else if (error.request) {
+      // Request was made but no response received
+      setError("No response from server");
+    } else {
+      // Something else happened
+      setError("Failed to connect to server");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleSearch = (value) => setSearchTerm(value);
 
@@ -305,7 +315,7 @@ function MessageSetting() {
     setSuccess("");
 
     try {
-      const response = await fetch('/api/marketing/insert', {
+      const response = await fetch(`${API_BASE}api/marketing/insert`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -342,20 +352,16 @@ function MessageSetting() {
     setSuccess("");
 
     try {
-      // This would be your API call to update a message
-      // For now, we'll just show a success message since the API endpoint isn't specified
       setSuccess('Message updated successfully (simulated)');
       handleEditClose();
 
-      // In a real implementation, you would call:
-      const response = await fetch(`/api/marketing/update/${currentMessage.id}`, {
+      const response = await fetch(`${API_BASE}api/marketing/update/${currentMessage.id}`, {
         method: 'post',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(currentMessage),
       });
-      // Then refresh the messages list
       fetchMessages();
 
     } catch (error) {
@@ -370,17 +376,13 @@ function MessageSetting() {
 
     setLoading(true);
     try {
-      // This would be your API call to delete a message
-      // For now, we'll just show a success message since the API endpoint isn't specified
       setMessages(messages.filter((msg) => msg.id !== id));
       setSuccess('Message deleted successfully (simulated)');
       if (openEditDialog) handleEditClose();
 
-      // In a real implementation, you would call:
-      const response = await fetch(`/api/marketing/delete/${id}`, {
+      const response = await fetch(`${API_BASE}api/marketing/delete/${id}`, {
         method: 'post'
       });
-      // Then refresh the messages list
       fetchMessages();
     } catch (error) {
       setError('Failed to delete message');
@@ -389,7 +391,6 @@ function MessageSetting() {
     }
   };
 
-  // Filter messages by search term or template keywords
   const filteredMessages = messages.filter((message) => {
     const searchLower = searchTerm.toLowerCase();
     const contentToSearch = `${message.title} ${message.body}`.toLowerCase();
@@ -546,13 +547,12 @@ function MessageSetting() {
               </Typography>
               <Box sx={{ p: 2, bgcolor: "#f5f5f5", borderRadius: 1, whiteSpace: 'pre-wrap' }}>
                 {fillTemplate(selectedMessage.body, {
-                  first_name: "John",
-                  last_name: "Doe",
-                  otp: "123456",
+                  first_name: "user_name",
+                  last_name: "Last_Name",
+                  otp: "******",
                   config: { APP_NAME: "MyApp", SUPPORT_TEAM: "Support Team" },
                   created_on: new Date().toLocaleString(),
                   mobile: "1234567890",
-                  amount: "$100",
                 })}
               </Box>
 
