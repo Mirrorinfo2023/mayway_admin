@@ -100,10 +100,10 @@ const KycTransactions = ({ showServiceTrans }) => {
 
   const StyledTableCell = styled(TableCell)(({ theme }) => ({
     [`&.${tableCellClasses.head}`]: {
-      background: "linear-gradient(90deg, #2196f3 0%, #21cbf3 100%)",
-      color: "#fff",
+      background: "#21BCF3",
+      color: "#FFF",
       fontWeight: 700,
-      fontSize: 12,
+      fontSize: 14,
       textTransform: "uppercase",
       padding: "8px 8px",
       borderRight: "1px solid #e3e3e3",
@@ -121,7 +121,7 @@ const KycTransactions = ({ showServiceTrans }) => {
       borderRight: "1px solid #e3e3e3",
     },
     [`&.${tableCellClasses.body}`]: {
-      fontSize: 12,
+      fontSize: 14,
       padding: "8px 8px",
       borderRight: "1px solid #e3e3e3",
       "&:last-child": {
@@ -235,9 +235,9 @@ const KycTransactions = ({ showServiceTrans }) => {
       <Grid container spacing={4} sx={{ padding: "0px 16px" }}>
         <Grid item={true} xs={12}>
           <TableContainer component={Paper}>
-            <Table aria-label="Otp Report">
+            <Table aria-label="Otp Report" >
               <TableHead>
-                <TableRow>
+                <TableRow style={{ whiteSpace: "nowrap" }}>
                   <StyledTableCell style={{ fontWeight: "bold" }} nowrap>
                     Sl No.
                   </StyledTableCell>
@@ -298,13 +298,13 @@ const KycTransactions = ({ showServiceTrans }) => {
                   </StyledTableCell>
                 </TableRow>
               </TableHead>
-              <TableBody>
+              <TableBody style={{ whiteSpace: "nowrap" }}>
                 {showServiceTrans.length > 0 ? (
                   (rowsPerPage > 0
                     ? filteredRows.slice(
-                        page * rowsPerPage,
-                        page * rowsPerPage + rowsPerPage
-                      )
+                      page * rowsPerPage,
+                      page * rowsPerPage + rowsPerPage
+                    )
                     : filteredRows
                   ).map((row, index) => (
                     <StyledTableRow
@@ -387,16 +387,16 @@ const KycTransactions = ({ showServiceTrans }) => {
                             row.status === 1
                               ? "Green"
                               : row.status === 2
-                              ? "Red"
-                              : "Orange",
+                                ? "Red"
+                                : "Orange",
                         }}
                       >
                         {" "}
                         {row.status === 1
                           ? "Approved"
                           : row.status === 2
-                          ? "Rejected"
-                          : "Pending"}
+                            ? "Rejected"
+                            : "Pending"}
                       </StyledTableCell>
                       <StyledTableCell
                         sx={{
@@ -604,7 +604,7 @@ const KycTransactions = ({ showServiceTrans }) => {
 
         <Grid
           container
-          // sx={{ background: "#FFF" }}
+        // sx={{ background: "#FFF" }}
         ></Grid>
       </Grid>
     </main>

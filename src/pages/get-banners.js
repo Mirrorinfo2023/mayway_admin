@@ -108,7 +108,26 @@ function BannersReport(props) {
     const [fromDate, setFromDate] = React.useState(today);
     const [toDate, setToDate] = React.useState(today);
 
+    const [categories, setCategories] = useState([]);
+    const [appCategories, setAppCategories] = useState([]);
 
+
+    useEffect(() => {
+        const getCategories = async () => {
+            try {
+                const response = await api.get("/api/banner/get-banner-category");
+                console.log("response is ", response.data.data.bannersCategory)
+                if (response.status === 200) {
+                    setAppCategories(response.data.data.notificationApp);
+                    setCategories(response.data.data.bannersCategory);
+                }
+            } catch (error) {
+                console.error("Error fetching categories:", error);
+            }
+        };
+
+        getCategories();
+    }, []);
     useEffect(() => {
         generateReport();
     }, []);
@@ -117,14 +136,39 @@ function BannersReport(props) {
         const reqData = {
             from_date: fromDate.toISOString().split('T')[0],
             to_date: toDate.toISOString().split('T')[0]
-        }
+        };
+
+
 
         try {
+            // Fetch categories
+            let catResp;
+            if (categories.length === 0 || appCategories.length === 0) {
+                catResp = await api.get("/api/banner/get-banner-category");
+                if (catResp.status === 200) {
+                    setAppCategories(catResp.data.data.notificationApp);
+                    setCategories(catResp.data.data.bannersCategory);
+                }
+            }
+            // console.log("reqData is: ", reqData)
+            // Fetch report
             const response = await api.post("/api/banner/get-banner-report", reqData);
-
+            // console.log("response is: ", response)
             if (response.status === 200) {
-                console.log(response.data);
-                setShowServiceTrans(response.data.data);
+                const appList = catResp?.data?.data?.notificationApp || appCategories;
+                const catList = catResp?.data?.data?.bannersCategory || categories;
+
+                const bannersWithNames = response.data.data.map(b => {
+                    const appName = appList.find(a => a.id === b.app_id)?.app_name || "N/A";
+                    const categoryName = catList.find(c => c.id === b.type_id)?.category_name || "N/A";
+                    return {
+                        ...b,
+                        app_name: appName,
+                        category: categoryName
+                    };
+                });
+
+                setShowServiceTrans(bannersWithNames);
                 setReport(response.data.report);
             }
         } catch (error) {
@@ -135,6 +179,9 @@ function BannersReport(props) {
             }
         }
     };
+
+
+
 
     const handleFromDateChange = (date) => {
         setFromDate(date);
@@ -148,7 +195,7 @@ function BannersReport(props) {
         <Layout>
             <Grid container spacing={3} sx={{ padding: 2 }}>
                 <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', justifyContent:"center", gap: 1, flexWrap: 'wrap', mb: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: "center", gap: 1, flexWrap: 'wrap', mb: 1 }}>
                         <StatCard bgcolor="#FFC107">
                             <StatContent>
                                 <StatValue>{report ? report.total_count : 0}</StatValue>
@@ -197,14 +244,14 @@ function BannersReport(props) {
                             <DatePicker
                                 label="From Date"
                                 value={fromDate}
-                                sx={{ minWidth: 140, maxWidth:170, background: '#fff', borderRadius: 1 }}
+                                sx={{ minWidth: 140, maxWidth: 170, background: '#fff', borderRadius: 1 }}
                                 format="DD-MM-YYYY"
                                 onChange={handleFromDateChange}
                             />
                             <DatePicker
                                 label="To Date"
                                 value={toDate}
-                                sx={{ minWidth: 140, maxWidth:170, background: '#fff', borderRadius: 1 }}
+                                sx={{ minWidth: 140, maxWidth: 170, background: '#fff', borderRadius: 1 }}
                                 format="DD-MM-YYYY"
                                 onChange={handleToDateChange}
                             />

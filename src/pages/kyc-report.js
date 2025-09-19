@@ -224,7 +224,7 @@ function KycReport() {
               <Box
                 sx={{
                   mt: 2,
-                  width: "25%",
+                  width: "20%",
                 }}
               >
                 <TextField

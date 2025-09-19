@@ -43,7 +43,7 @@ const CourseReportTable = () => {
     const [categoryErrors, setCategoryErrors] = useState({});
 
     const [formData, setFormData] = useState({
-        user_id: "",
+
         category: "",
         name: "",
         link: "",
@@ -55,24 +55,60 @@ const CourseReportTable = () => {
 
     const [rows, setRows] = useState([]); // start empty
 
+    function formatDate(dateStr) {
+        const date = new Date(dateStr);
+        const day = String(date.getDate()).padStart(2, "0");
+        const month = date.toLocaleString("en-US", { month: "short" });
+        const year = date.getFullYear();
+        const time = date.toLocaleTimeString("en-US");
+        return `${day}/${month}/${year}, ${time}`;
+    }
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await api.post("/api/courses_video/getAllcategory");
+                console.log("res is: ", res);
+
+                if (res.data?.status === 200) {
+                    // Create a dictionary of category_id to category_name
+                    const categoryDict = res.data.data.reduce((acc, cat) => {
+                        acc[cat.id] = cat.title;
+
+                        return acc;
+                    }, {});
+                    setCategories(categoryDict);
+
+
+                } else {
+                    console.error("Failed to fetch categories:", res.data?.message);
+                }
+            } catch (err) {
+                console.error("Failed to fetch categories:", err);
+            }
+        };
+        fetchCategories();
+    }, []);
+
+
     // 🔹 Fetch course videos from API
     useEffect(() => {
         const fetchVideos = async () => {
             try {
-                const res = await api.post(
-                    "/api/courses_video/get-video-course",
-                );
+                const res = await api.post("/api/courses_video/get-video-course");
+                console.log("res from get video course is: ", res);
 
-                if (res.data?.success) {
-                    console.log("Fetched videos:", res.data);
+                if (res.data?.status === 200) {
+                    console.log("Fetched videos:", res.data.data);
 
                     setRows(
-                        (decData.videos || []).map((vid, idx) => ({
-                            id: vid.id || idx + 1,
-                            date: vid.created_at || new Date().toLocaleString(),
-                            category: vid.category_name || "",
-                            name: vid.title || "",
-                            link: vid.video_link || "",
+                        res.data.data.map((vid, idx) => ({
+                            id: vid.id,
+                            date: formatDate(vid.created_on),
+
+                            category: categories[vid.category_id] || "N/A",  // Using 
+                            name: vid.title,
+                            link: vid.video_link,
                             hidden: false,
                         }))
                     );
@@ -85,36 +121,7 @@ const CourseReportTable = () => {
         };
 
         fetchVideos();
-    }, []);
-
-    useEffect(() => {
-        // This will run once when the component mounts
-        const uid = localStorage.getItem("uid");
-        console.log("uid is: ", uid)
-        if (uid) {
-            setFormData((prev) => ({
-                ...prev,
-                user_id: uid,
-            }));
-        }
-    }, []);
-
-    console.log("formta is ", formData)
-    // 🔹 Fetch categories from API
-    useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                const res = await api.post("/api/courses_video/getcategory");
-                console.log("res is: ", res)
-                if (res.data?.success) {
-                    setCategories(res.data.title || []);
-                }
-            } catch (err) {
-                console.error("Failed to fetch categories:", err);
-            }
-        };
-        fetchCategories();
-    }, []);
+    }, [categories]);  // Dependency on categories to re-fetch videos when categories change
 
     // Dialog controls
     const handleOpen = () => {
@@ -146,17 +153,18 @@ const CourseReportTable = () => {
         if (!validateForm()) return;
 
         try {
-            const formPayload = new FormData();
-            formPayload.append("title", formData.name);
-            formPayload.append("video_link", formData.link);
-            formPayload.append("category_id", formData.category);
+            const payload = {
+                title: formData.name,
+                video_link: formData.link,
+                category_id: formData.category
+            };
 
             if (isEditing && editId) {
                 // 🔹 Update existing
-                formPayload.append("video_id", editId);
+                payload.video_id = editId; // ✅ correct way to add a property to an object
 
-                const res = await api.post("/api/courses_video/update-course-video", formPayload, {
-                    headers: { "Content-Type": "multipart/form-data" },
+                const res = await api.post("/api/courses_video/update-video-course", payload, {
+                    headers: { "Content-Type": "application/json" }
                 });
 
                 if (res.data.status === 200) {
@@ -167,9 +175,10 @@ const CourseReportTable = () => {
                     alert(res.data.message || "Failed to update video");
                 }
             } else {
-                // 🔹 Add new
-                const res = await api.post("/api/courses_video/add-course-video", formPayload, {
-                    headers: { "Content-Type": "multipart/form-data" },
+                console.log("Data to send for adding video course: ", payload);
+
+                const res = await api.post("/api/courses_video/add-course-video", payload, {
+                    headers: { "Content-Type": "application/json" }
                 });
 
                 if (res.data.status === 200) {
@@ -188,7 +197,6 @@ const CourseReportTable = () => {
 
 
     const handleAddCategorySubmit = async () => {
-        // Basic validation
         if (!newCategoryName.trim()) {
             setCategoryErrors({ name: "Category name is required" });
             return;
@@ -196,37 +204,51 @@ const CourseReportTable = () => {
         setCategoryErrors({});
 
         try {
-            const formDataToSend = new FormData();
-            formDataToSend.append("category_name", newCategoryName);
-            formDataToSend.append("description", newCategoryDescription);
-            // Send the current user_id from formData
+            const payload = {
+                category_name: newCategoryName,
+                description: newCategoryDescription,
+                user_id: formData.user_id,
+            };
 
-            formDataToSend.append("user_id", formData.user_id);
-
-            console.log("formDataToSend are: ", formDataToSend)
-
-            const res = await api.post("/api/courses_video/getcategory", formDataToSend, {
-                headers: { "Content-Type": "multipart/form-data" },
+            const res = await api.post("/api/courses_video/addcategory", payload, {
+                headers: { "Content-Type": "application/json" },
             });
 
+            // --- Handle backend response properly ---
             if (res.data.status === 201) {
-                alert("Category added successfully!");
-                setCategories([...categories, newCategoryName]);
+                alert(res.data.message || "Category added successfully!");
+                const newCategory = res.data.data;
+                setCategories({
+                    ...categories,
+                    [newCategory.id]: newCategory.category_name,
+                });
                 setCategoryOpen(false);
                 setNewCategoryName("");
                 setNewCategoryDescription("");
                 setNewCategoryParent(null);
                 setSelectedCategoryFile(null);
-                // Optionally set the newly added category as selected in video form
-                setFormData({ ...formData, category: newCategoryName });
-            } else {
+                setFormData({ ...formData, category: res.data.data.category_name });
+            } else if (res.data.status === 400) {
+                // Show backend error
                 alert(res.data.error || "Failed to add category");
+                if (res.data.fields) {
+                    // Highlight missing fields if provided
+                    const errorsObj = {};
+                    res.data.fields.forEach(f => errorsObj[f] = "This field is required");
+                    setCategoryErrors(errorsObj);
+                }
+            } else {
+                alert(res.data.error || "Something went wrong");
             }
         } catch (err) {
-            console.error("Failed to add category:", err);
-            alert("Something went wrong");
+            // Handle network or unexpected errors
+            console.error("Failed to add category:", err.response?.data || err.message);
+            const backendError = err.response?.data?.error || err.response?.data?.message;
+            alert(backendError || "Something went wrong");
         }
     };
+
+
 
     // Confirm dialog handler
     const confirmActionHandler = () => {
@@ -269,7 +291,10 @@ const CourseReportTable = () => {
     const handleDelete = (id) => {
         setConfirmAction(() => async () => {
             try {
-                const res = await api.post("/api/courses_video/delete-course-video", { video_id: id });
+                // console.log("video id is: ", id)
+
+                const res = await api.post("/api/courses_video/delete-video-course", { video_id: id });
+                console.log("res is: ", res)
                 if (res.data.status === 200) {
                     alert("Video deleted successfully!");
                     setRows(rows.filter((row) => row.id !== id));
@@ -421,12 +446,13 @@ const CourseReportTable = () => {
                                     sx={{ minWidth: 400 }} // set fixed or min width
                                 >
                                     <MenuItem value="">Select Category</MenuItem>
-                                    {categories.map((cat, idx) => (
-                                        <MenuItem key={idx} value={cat}>
-                                            {cat}
+                                    {Object.entries(categories).map(([id, title]) => (
+                                        <MenuItem key={id} value={id}>
+                                            {title}
                                         </MenuItem>
                                     ))}
                                 </Select>
+
 
                                 <Typography
                                     variant="body2"

@@ -34,6 +34,7 @@ function AddBanners(props) {
     const dispatch = useDispatch();
     const uid = Cookies.get('uid');
 
+    console.log("uid is:", uid)
     useEffect(() => {
         const getTnx = async () => {
             const reqData = {
@@ -43,11 +44,12 @@ function AddBanners(props) {
             try {
 
                 const response = await api.get("/api/banner/get-banner-report", reqData);
-                
+
+                console.log("response is: ", response)
                 if (response.status === 200) {
-                    
+
                     setShowServiceTrans(response.data.data)
-                  
+
                 }
 
             } catch (error) {
@@ -63,13 +65,13 @@ function AddBanners(props) {
             getTnx();
         }
 
-    }, [uid,dispatch])
+    }, [uid, dispatch])
 
 
     return (
 
         <Layout>
-            <AddBannersTransactions  />
+            <AddBannersTransactions />
         </Layout>
 
 

@@ -33,11 +33,12 @@ import api from "../../utils/api";
 import { DataEncrypt, DataDecrypt } from "../../utils/encryption"; // your file
 import ContactPageIcon from '@mui/icons-material/ContactPage';
 const steps = ["Aadhaar", "PAN", "Bank", "Status"];
+import axios from "axios";
 
 function UploadKyc({ open, onClose }) {
     const [activeStep, setActiveStep] = useState(0);
     const [formData, setFormData] = useState({
-        user_id: "",
+        user_id: "111113",
         // Aadhaar
         aadhaarNo: "",
         address: "",
@@ -98,16 +99,7 @@ function UploadKyc({ open, onClose }) {
 
     const handleNext = () => validateStep() && setActiveStep((p) => p + 1);
     const handleBack = () => setActiveStep((p) => p - 1);
-    useEffect(() => {
-        // This will run once when the component mounts
-        const uid = localStorage.getItem("uid");
-        if (uid) {
-            setFormData((prev) => ({
-                ...prev,
-                user_id: uid,
-            }));
-        }
-    }, []);
+
     // const token = localStorage.getItem("token"); // or sessionStorage
 
     const handleSubmit = async () => {
@@ -115,54 +107,63 @@ function UploadKyc({ open, onClose }) {
         try {
             const data = new FormData();
 
-            // Encrypted text fields
-            const encryptedFields = {
-                user_id: formData.user_id,
-                pan_number: formData.panNo,
-                aadhar_number: formData.aadhaarNo,
-                account_number: formData.accNo,
-                account_holder: formData.holderName,
-                bank_name: formData.bankName,
-                ifsc_code: formData.ifsc,
-                nominee_name: formData.nominee,
-                nominee_relation: formData.nomineeRelation,
-                full_address: formData.address,
-            };
+            // ✅ Append plain text fields exactly as backend expects
+            data.append("user_id", formData.user_id);
+            data.append("pan_number", formData.panNo);
+            data.append("aadhar_number", formData.aadhaarNo);
+            data.append("account_number", formData.accNo);
+            data.append("account_holder", formData.holderName);
+            data.append("bank_name", formData.bankName);
+            data.append("ifsc_code", formData.ifsc);
+            data.append("nominee_name", formData.nominee);
+            data.append("nominee_relation", formData.nomineeRelation);
+            data.append("full_address", formData.address);
 
-            Object.keys(encryptedFields).forEach((key) => {
-                if (encryptedFields[key]) {
-                    data.append(key, DataEncrypt(encryptedFields[key]));  // ✅ no stringify
-                }
-            });
-
-            // Files
+            // ✅ Append files
             if (formData.panPhoto) data.append("panImage", formData.panPhoto);
             if (formData.aadhaarFront) data.append("aadharImage", formData.aadhaarFront);
             if (formData.aadhaarBack) data.append("aadharBackImage", formData.aadhaarBack);
             if (formData.bankDoc) data.append("chequeBookImage", formData.bankDoc);
 
-            // console.log("token is:", token)
             const res = await api.post(
                 "/api/users/550ecdddb5b8b023dda91594810884c12456d0a3",
                 data,
                 {
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                        // "Authorization": `Bearer ${token}`,  // ✅ required
-                    },
+                    headers: { "Content-Type": "multipart/form-data" },
                 }
             );
 
-            console.log("res is ", res);
-            alert("KYC submitted successfully!");
-            onClose();
+            console.log("KYC Upload Response:", res.data);
+            alert("KYC uploaded successfully");
+
+            // ✅ Reset form and stepper after success
+            setFormData({
+                user_id: "",
+                aadhaarNo: "",
+                address: "",
+                aadhaarFront: null,
+                aadhaarBack: null,
+                panNo: "",
+                nominee: "",
+                nomineeRelation: "",
+                panPhoto: null,
+                accNo: "",
+                bankName: "",
+                holderName: "",
+                ifsc: "",
+                bankDoc: null,
+                status: "Pending",
+            });
+            setActiveStep(0);
+            setErrors({});
+
+            onClose(); // close the dialog
         } catch (err) {
             console.error("KYC Submit Error:", err.response?.data || err.message);
             alert("Error submitting KYC");
         }
         setLoading(false);
     };
-
 
 
     const fieldStyle = {
@@ -177,8 +178,7 @@ function UploadKyc({ open, onClose }) {
             minHeight: "40px",  // smaller overall field height
         },
     };
-
-
+    .01
     // Step Content
     const renderStepContent = () => {
         const fieldBox = { display: "flex", flexDirection: "column", gap: 2, p: 5, };
