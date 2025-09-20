@@ -25,12 +25,16 @@ import { Add, Edit, Delete, VisibilityOff, Visibility } from "@mui/icons-materia
 import Layout from "@/components/Dashboard/layout";
 import api from "../../utils/api";
 import { DataEncrypt, DataDecrypt } from "../../utils/encryption";
+import { InputAdornment, } from "@mui/material";
+import ImageIcon from "@mui/icons-material/Image";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 
 const CourseReportTable = () => {
     const [search, setSearch] = useState("");
     const [open, setOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editId, setEditId] = useState(null);
+    const [categoryImage, setCategoryImage] = useState(null);
 
     // categories from API
     const [categories, setCategories] = useState([]);
@@ -204,17 +208,17 @@ const CourseReportTable = () => {
         setCategoryErrors({});
 
         try {
-            const payload = {
-                category_name: newCategoryName,
-                description: newCategoryDescription,
-                user_id: formData.user_id,
-            };
+            const formDataToSend = new FormData();
+            formDataToSend.append("category_name", newCategoryName);
+            formDataToSend.append("description", newCategoryDescription);
+            if (categoryImage) formDataToSend.append("image", categoryImage);
+            formDataToSend.append("user_id", formData.user_id || 1); // fallback if user_id missing
 
-            const res = await api.post("/api/courses_video/addcategory", payload, {
-                headers: { "Content-Type": "application/json" },
+            const res = await api.post("/api/courses_video/addcategory", formDataToSend, {
+                headers: { "Content-Type": "multipart/form-data" },
             });
 
-            // --- Handle backend response properly ---
+            console.log("res is: ",res)
             if (res.data.status === 201) {
                 alert(res.data.message || "Category added successfully!");
                 const newCategory = res.data.data;
@@ -225,28 +229,16 @@ const CourseReportTable = () => {
                 setCategoryOpen(false);
                 setNewCategoryName("");
                 setNewCategoryDescription("");
-                setNewCategoryParent(null);
-                setSelectedCategoryFile(null);
-                setFormData({ ...formData, category: res.data.data.category_name });
-            } else if (res.data.status === 400) {
-                // Show backend error
-                alert(res.data.error || "Failed to add category");
-                if (res.data.fields) {
-                    // Highlight missing fields if provided
-                    const errorsObj = {};
-                    res.data.fields.forEach(f => errorsObj[f] = "This field is required");
-                    setCategoryErrors(errorsObj);
-                }
+                setCategoryImage(null);
             } else {
                 alert(res.data.error || "Something went wrong");
             }
         } catch (err) {
-            // Handle network or unexpected errors
             console.error("Failed to add category:", err.response?.data || err.message);
-            const backendError = err.response?.data?.error || err.response?.data?.message;
-            alert(backendError || "Something went wrong");
+            alert(err.response?.data?.error || "Something went wrong");
         }
     };
+
 
 
 
@@ -478,7 +470,13 @@ const CourseReportTable = () => {
                                 >
                                     Add New Category
                                 </DialogTitle>
-                                <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, }}>
+                                <DialogContent
+                                    sx={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 2,
+                                    }}
+                                >
                                     {/* Category Name */}
                                     <TextField
                                         label="Category Name *"
@@ -498,8 +496,46 @@ const CourseReportTable = () => {
                                         value={newCategoryDescription}
                                         onChange={(e) => setNewCategoryDescription(e.target.value)}
                                     />
+                                    <TextField
+                                        fullWidth
+                                        value={categoryImage ? categoryImage.name : ""}
+                                        placeholder="Upload Category Image"
+                                        InputProps={{
+                                            readOnly: true,
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    <ImageIcon color="action" />
+                                                </InputAdornment>
+                                            ),
+                                            endAdornment: (
+                                                <InputAdornment position="end">
+                                                    <IconButton component="label">
+                                                        <UploadFileIcon />
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            hidden
+                                                            onChange={(e) => setCategoryImage(e.target.files[0])}
+                                                        />
+                                                    </IconButton>
+                                                </InputAdornment>
+                                            ),
+                                        }}
+                                    />
 
+
+                                    {/* Preview (optional) */}
+                                    {/* {categoryImage && (
+                                        <Box mt={1}>
+                                            <img
+                                                src={URL.createObjectURL(categoryImage)}
+                                                alt="Category Preview"
+                                                style={{ width: "100%", maxHeight: 200, objectFit: "contain", borderRadius: 8 }}
+                                            />
+                                        </Box>
+                                    )} */}
                                 </DialogContent>
+
                                 <DialogActions>
                                     <Button onClick={() => setCategoryOpen(false)} color="secondary">
                                         Cancel
