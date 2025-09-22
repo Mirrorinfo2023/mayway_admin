@@ -47,7 +47,6 @@ const CourseReportTable = () => {
     const [categoryErrors, setCategoryErrors] = useState({});
 
     const [formData, setFormData] = useState({
-
         category: "",
         name: "",
         link: "",
@@ -99,23 +98,26 @@ const CourseReportTable = () => {
     useEffect(() => {
         const fetchVideos = async () => {
             try {
-                const res = await api.post("/api/courses_video/get-video-course");
+                const res = await api.post("/api/courses_video/get-videos");
                 console.log("res from get video course is: ", res);
 
                 if (res.data?.status === 200) {
-                    console.log("Fetched videos:", res.data.data);
+                    const videos = res.data.data;
+
+                    // If backend sends a single object, normalize it into an array
+                    const videoArray = Array.isArray(videos) ? videos : [videos];
 
                     setRows(
-                        res.data.data.map((vid, idx) => ({
+                        videoArray.map((vid) => ({
                             id: vid.id,
                             date: formatDate(vid.created_on),
-
-                            category: categories[vid.category_id] || "N/A",  // Using 
+                            category: categories[vid.category_id] || "N/A",
                             name: vid.title,
                             link: vid.video_link,
-                            hidden: false,
+                            status: vid.status, // ✅ keep original status from backend
                         }))
                     );
+
                 } else {
                     console.error("Failed to fetch videos:", res.data?.message);
                 }
@@ -125,7 +127,9 @@ const CourseReportTable = () => {
         };
 
         fetchVideos();
-    }, [categories]);  // Dependency on categories to re-fetch videos when categories change
+    }, [categories]);
+
+
 
     // Dialog controls
     const handleOpen = () => {
@@ -153,6 +157,22 @@ const CourseReportTable = () => {
 
     // Add video
     // Inside handleSubmit
+    // Edit
+    const handleEdit = (row) => {
+        setFormData({
+            category: Object.keys(categories).find(
+                (id) => categories[id] === row.category
+            ) || "", // store category_id instead of name
+            name: row.name,
+            link: row.link,
+        });
+        setIsEditing(true);
+        setEditId(row.id);
+        setErrors({});
+        setOpen(true);
+    };
+
+    // Submit (Add/Update)
     const handleSubmit = async () => {
         if (!validateForm()) return;
 
@@ -160,34 +180,53 @@ const CourseReportTable = () => {
             const payload = {
                 title: formData.name,
                 video_link: formData.link,
-                category_id: formData.category
+                category_id: formData.category,
+                status: 1, // always active
             };
 
             if (isEditing && editId) {
-                // 🔹 Update existing
-                payload.video_id = editId; // ✅ correct way to add a property to an object
+                payload.video_id = editId;
 
-                const res = await api.post("/api/courses_video/update-video-course", payload, {
+                const res = await api.post("/api/courses_video/update-video", payload, {
                     headers: { "Content-Type": "application/json" }
                 });
 
                 if (res.data.status === 200) {
                     alert("Video updated successfully!");
-                    setRows(rows.map(r => r.id === editId ? { ...r, ...formData } : r));
+                    setRows(rows.map(r =>
+                        r.id === editId
+                            ? {
+                                ...r,
+                                category: categories[payload.category_id] || "N/A",
+                                name: payload.title,
+                                link: payload.video_link,
+                                status: 1,
+                            }
+                            : r
+                    ));
                     handleClose();
                 } else {
                     alert(res.data.message || "Failed to update video");
                 }
             } else {
-                console.log("Data to send for adding video course: ", payload);
-
-                const res = await api.post("/api/courses_video/add-course-video", payload, {
+                // 🔹 Add new video
+                const res = await api.post("/api/courses_video/add-video", payload, {
                     headers: { "Content-Type": "application/json" }
                 });
 
-                if (res.data.status === 200) {
+                if (res.data.status === 200 || res.data.status === 201) {
                     alert("Video added successfully!");
-                    setRows([...rows, { id: rows.length + 1, ...formData, hidden: false, date: new Date().toLocaleString() }]);
+                    setRows([
+                        ...rows,
+                        {
+                            id: res.data.data.insertId || rows.length + 1,
+                            category: categories[payload.category_id] || "N/A",
+                            name: payload.title,
+                            link: payload.video_link,
+                            status: 1,
+                            date: new Date().toLocaleString(),
+                        }
+                    ]);
                     handleClose();
                 } else {
                     alert(res.data.message || "Failed to add video");
@@ -198,6 +237,7 @@ const CourseReportTable = () => {
             alert("Something went wrong");
         }
     };
+
 
 
     const handleAddCategorySubmit = async () => {
@@ -218,7 +258,7 @@ const CourseReportTable = () => {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
-            console.log("res is: ",res)
+            console.log("res is: ", res)
             if (res.data.status === 201) {
                 alert(res.data.message || "Category added successfully!");
                 const newCategory = res.data.data;
@@ -239,9 +279,6 @@ const CourseReportTable = () => {
         }
     };
 
-
-
-
     // Confirm dialog handler
     const confirmActionHandler = () => {
         if (confirmAction) confirmAction();
@@ -251,18 +288,15 @@ const CourseReportTable = () => {
     // Hide/Unhide
     const handleToggleHide = async (id) => {
         try {
-            const row = rows.find(r => r.id === id);
-            const newHidden = !row.hidden;
-
-            const res = await api.post("/api/courses_video/update-course-status", {
-                video_id: id,
-                hidden: newHidden ? 1 : 0,
-            });
+            const res = await api.post("/api/courses_video/hide-video", { video_id: id });
 
             if (res.data.status === 200) {
-                setRows(rows.map(r => r.id === id ? { ...r, hidden: newHidden } : r));
+                // Update local state
+                setRows(rows.map(r =>
+                    r.id === id ? { ...r, status: res.data.newStatus } : r
+                ));
             } else {
-                alert(res.data.message || "Failed to update visibility");
+                alert(res.data.message || "Failed to update video status");
             }
         } catch (err) {
             console.error("Toggle hide error:", err);
@@ -270,14 +304,15 @@ const CourseReportTable = () => {
         }
     };
 
+
     // Edit
-    const handleEdit = (row) => {
-        setFormData({ category: row.category, name: row.name, link: row.link });
-        setIsEditing(true);
-        setEditId(row.id);
-        setErrors({});
-        setOpen(true);
-    };
+    // const handleEdit = (row) => {
+    //     setFormData({ category: row.category, name: row.name, link: row.link });
+    //     setIsEditing(true);
+    //     setEditId(row.id);
+    //     setErrors({});
+    //     setOpen(true);
+    // };
 
     // Delete
     const handleDelete = (id) => {
@@ -305,11 +340,13 @@ const CourseReportTable = () => {
     // Filter rows
     const filteredRows = rows.filter(
         (row) =>
+            row.status === 1 && // ✅ only show if status=1
             (row.name.toLowerCase().includes(search.toLowerCase()) ||
-                row.category.toLowerCase().includes(search.toLowerCase())) &&
-            !row.hidden
+                row.category.toLowerCase().includes(search.toLowerCase()))
     );
 
+    console.log("rows: ", rows)
+    console.log("filteredRows: ", filteredRows)
     return (
         <Layout>
             <Box p={3}>
