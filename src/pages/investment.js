@@ -108,33 +108,39 @@ function InvestmentReport(props) {
     const [fromDate, setFromDate] = React.useState(today);
     const [toDate, setToDate] = React.useState(today);
 
+    const [allServiceTrans, setAllServiceTrans] = useState([]); // store all data
+
 
     useEffect(() => {
-        generateReport();
+        const fetchData = async () => {
+            try {
+                const response = await api.get("/api/prime-requests");
+                if (response.status === 200 && response.data.success) {
+                    setAllServiceTrans(response.data.data);
+                    setShowServiceTrans(response.data.data); // initially show all
+                    setReport(response.data.report);
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        fetchData();
     }, []);
 
-    const generateReport = async () => {
-        const reqData = {
-            from_date: fromDate.toISOString().split('T')[0],
-            to_date: toDate.toISOString().split('T')[0]
-        }
 
-        try {
-            const response = await api.post("/api/banner/get-banner-report", reqData);
+    const generateReport = () => {
+        const from = fromDate.startOf('day'); // dayjs object
+        const to = toDate.endOf('day');
 
-            if (response.status === 200) {
-                console.log(response.data);
-                setShowServiceTrans(response.data.data);
-                setReport(response.data.report);
-            }
-        } catch (error) {
-            if (error?.response?.data?.error) {
-                dispatch(callAlert({ message: error.response.data.error, type: 'FAILED' }))
-            } else {
-                dispatch(callAlert({ message: error.message, type: 'FAILED' }))
-            }
-        }
+        const filtered = allServiceTrans.filter(item => {
+            const createdAt = dayjs(item.createdAt);
+            return createdAt.isBetween(from, to, null, '[]'); // inclusive
+        });
+
+        setShowServiceTrans(filtered);
     };
+
 
     const handleFromDateChange = (date) => {
         setFromDate(date);
@@ -148,7 +154,7 @@ function InvestmentReport(props) {
         <Layout>
             <Grid container spacing={3} sx={{ padding: 2 }}>
                 <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', justifyContent:"center", gap: 1, flexWrap: 'wrap', mb: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: "center", gap: 1, flexWrap: 'wrap', mb: 1 }}>
                         <StatCard bgcolor="#FFC107">
                             <StatContent>
                                 <StatValue>{report ? report.total_count : 0}</StatValue>
@@ -197,14 +203,14 @@ function InvestmentReport(props) {
                             <DatePicker
                                 label="From Date"
                                 value={fromDate}
-                                sx={{ minWidth: 140, maxWidth:170, background: '#fff', borderRadius: 1 }}
+                                sx={{ minWidth: 140, maxWidth: 170, background: '#fff', borderRadius: 1 }}
                                 format="DD-MM-YYYY"
                                 onChange={handleFromDateChange}
                             />
                             <DatePicker
                                 label="To Date"
                                 value={toDate}
-                                sx={{ minWidth: 140, maxWidth:170, background: '#fff', borderRadius: 1 }}
+                                sx={{ minWidth: 140, maxWidth: 170, background: '#fff', borderRadius: 1 }}
                                 format="DD-MM-YYYY"
                                 onChange={handleToDateChange}
                             />
@@ -246,7 +252,7 @@ function InvestmentReport(props) {
                     </FilterRow>
                 </Grid>
             </Grid>
-            {/* <InvestmentTransactions showServiceTrans={showServiceTrans} /> */}
+            <InvestmentTransactions showServiceTrans={showServiceTrans} />
         </Layout>
     );
 }
