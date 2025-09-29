@@ -42,7 +42,7 @@ const drawerWidth = 200;
 let menuArray = [
   { redirect: 'dashboard', name: 'Dashboard', parent: 'dashboard', icon: <DashboardIcon sx={{ fontSize: 20 }} /> },
   { redirect: '#', name: 'Masters', parent: 'masters', icon: <WidgetsIcon sx={{ fontSize: 20 }} /> },
-  { redirect: '#', name: 'Networking', parent: 'networking', icon: <PeopleIcon sx={{ fontSize: 20 }} /> },
+  { redirect: '#', name: 'Affilate', parent: 'networking', icon: <PeopleIcon sx={{ fontSize: 20 }} /> },
   { redirect: '#', name: 'Wallet', parent: 'wallet', icon: <AccountBalanceWalletIcon sx={{ fontSize: 20 }} /> },
   { redirect: '#', name: 'Marketing', parent: 'marketing', icon: <CampaignIcon sx={{ fontSize: 20 }} /> },
   // { redirect: '#', name: 'Recharge/Payment', parent: 'recharge', icon: <PaymentIcon sx={{ fontSize: 20 }} /> },
@@ -741,7 +741,7 @@ function Layout(props) {
         }}
       >
         <main style={{ marginBottom: "50px" }} className="flex-none transition-all">{children}</main>
-        <div className="footer" style={{
+        {/* <div className="footer" style={{
           justifyContent: 'center',
           background: 'linear-gradient(90deg, #1976d2 0%, #42a5f5 100%)',
           position: 'fixed',
@@ -769,7 +769,7 @@ function Layout(props) {
             <span style={{ verticalAlign: 'middle', marginRight: 6, fontSize: '18px' }}>💡</span>
             Software designed & developed By Mirrorinfo Tech Pvt Ltd
           </p>
-        </div>
+        </div> */}
       </Box>
     </Box>
   );
