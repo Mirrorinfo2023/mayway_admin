@@ -115,6 +115,7 @@ const CourseReportTable = () => {
                             name: vid.title,
                             link: vid.video_link,
                             status: vid.status, // ✅ keep original status from backend
+                            thumbnail_img: vid.thumbnail_img
                         }))
                     );
 
@@ -137,6 +138,7 @@ const CourseReportTable = () => {
         setErrors({});
         setIsEditing(false);
         setEditId(null);
+        setSelectedFile(null);
         setOpen(true);
     };
     const handleClose = () => setOpen(false);
@@ -151,12 +153,33 @@ const CourseReportTable = () => {
         } else if (!/^https?:\/\/.+/.test(formData.link)) {
             tempErrors.link = "Enter a valid URL (https://...)";
         }
+        // Only validate image for new courses, not for editing
+        if (!isEditing && !selectedFile) {
+            tempErrors.image = "Course image is required";
+        }
         setErrors(tempErrors);
         return Object.keys(tempErrors).length === 0;
     };
 
-    // Add video
-    // Inside handleSubmit
+    // Handle file selection
+    const handleFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                setErrors({ ...errors, image: "Please select a valid image file" });
+                return;
+            }
+            // Validate file size (e.g., 5MB limit)
+            if (file.size > 5 * 1024 * 1024) {
+                setErrors({ ...errors, image: "Image size should be less than 5MB" });
+                return;
+            }
+            setSelectedFile(file);
+            setErrors({ ...errors, image: "" });
+        }
+    };
+
     // Edit
     const handleEdit = (row) => {
         setFormData({
@@ -168,6 +191,7 @@ const CourseReportTable = () => {
         });
         setIsEditing(true);
         setEditId(row.id);
+        setSelectedFile(null); // Reset file when editing
         setErrors({});
         setOpen(true);
     };
@@ -177,55 +201,69 @@ const CourseReportTable = () => {
         if (!validateForm()) return;
 
         try {
-            const payload = {
-                title: formData.name,
-                video_link: formData.link,
-                category_id: formData.category,
-                status: 1, // always active
-            };
-
             if (isEditing && editId) {
-                payload.video_id = editId;
+                // 🔹 UPDATE (send JSON, not FormData)
+                const payload = {
+                    video_id: editId,
+                    title: formData.name,
+                    video_link: formData.link,
+                    category_id: formData.category,
+                    status: 1,
+                };
+
+                console.log("Update payload:", payload);
 
                 const res = await api.post("/api/courses_video/update-video", payload, {
-                    headers: { "Content-Type": "application/json" }
+                    headers: { "Content-Type": "application/json" },
                 });
 
                 if (res.data.status === 200) {
-                    alert("Video updated successfully!");
-                    setRows(rows.map(r =>
-                        r.id === editId
-                            ? {
-                                ...r,
-                                category: categories[payload.category_id] || "N/A",
-                                name: payload.title,
-                                link: payload.video_link,
-                                status: 1,
-                            }
-                            : r
-                    ));
+                    alert("Course updated successfully!");
+                    setRows(
+                        rows.map(r =>
+                            r.id === editId
+                                ? {
+                                    ...r,
+                                    category: categories[formData.category] || "N/A",
+                                    name: formData.name,
+                                    link: formData.link,
+                                    status: 1,
+                                }
+                                : r
+                        )
+                    );
                     handleClose();
                 } else {
                     alert(res.data.message || "Failed to update video");
                 }
             } else {
-                // 🔹 Add new video
-                const res = await api.post("/api/courses_video/add-video", payload, {
-                    headers: { "Content-Type": "application/json" }
+                // 🔹 ADD NEW (send FormData because of possible image)
+                const formDataToSend = new FormData();
+                formDataToSend.append("title", formData.name);
+                formDataToSend.append("video_link", formData.link);
+                formDataToSend.append("category_id", formData.category);
+                formDataToSend.append("status", "1");
+
+                if (selectedFile) {
+                    formDataToSend.append("image", selectedFile);
+                }
+
+                const res = await api.post("/api/courses_video/add-video", formDataToSend, {
+                    headers: { "Content-Type": "multipart/form-data" },
                 });
 
                 if (res.data.status === 200 || res.data.status === 201) {
-                    alert("Video added successfully!");
+                    alert("Course added successfully!");
                     setRows([
                         ...rows,
                         {
                             id: res.data.data.insertId || rows.length + 1,
-                            category: categories[payload.category_id] || "N/A",
-                            name: payload.title,
-                            link: payload.video_link,
+                            category: categories[formData.category] || "N/A",
+                            name: formData.name,
+                            link: formData.link,
                             status: 1,
                             date: new Date().toLocaleString(),
-                        }
+                        },
                     ]);
                     handleClose();
                 } else {
@@ -237,6 +275,7 @@ const CourseReportTable = () => {
             alert("Something went wrong");
         }
     };
+
 
 
 
@@ -304,26 +343,14 @@ const CourseReportTable = () => {
         }
     };
 
-
-    // Edit
-    // const handleEdit = (row) => {
-    //     setFormData({ category: row.category, name: row.name, link: row.link });
-    //     setIsEditing(true);
-    //     setEditId(row.id);
-    //     setErrors({});
-    //     setOpen(true);
-    // };
-
     // Delete
     const handleDelete = (id) => {
         setConfirmAction(() => async () => {
             try {
-                // console.log("video id is: ", id)
-
                 const res = await api.post("/api/courses_video/delete-video-course", { video_id: id });
                 console.log("res is: ", res)
                 if (res.data.status === 200) {
-                    alert("Video deleted successfully!");
+                    console.log("Course deleted successfully!");
                     setRows(rows.filter((row) => row.id !== id));
                 } else {
                     alert(res.data.message || "Failed to delete video");
@@ -389,7 +416,7 @@ const CourseReportTable = () => {
                                 textTransform: "none",
                             }}
                         >
-                            Add new video
+                            Add new Course
                         </Button>
                     </Box>
                 </Box>
@@ -409,6 +436,7 @@ const CourseReportTable = () => {
                                 <TableCell>Course Category</TableCell>
                                 <TableCell>Course Name</TableCell>
                                 <TableCell>Course Link</TableCell>
+                                <TableCell>Image</TableCell>
                                 <TableCell>Actions</TableCell>
                             </TableRow>
                         </TableHead>
@@ -420,11 +448,40 @@ const CourseReportTable = () => {
                                         <TableCell>{row.date}</TableCell>
                                         <TableCell>{row.category}</TableCell>
                                         <TableCell>{row.name}</TableCell>
+
+                                        {/* Video link - clickable */}
                                         <TableCell>
-                                            <a href={row.link} target="_blank" rel="noopener noreferrer">
-                                                {row.link}
+                                            <a
+                                                href={row.link}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{ color: "#1976d2", textDecoration: "none", wordBreak: "break-word" }}
+                                            >
+                                                View Video
                                             </a>
                                         </TableCell>
+
+                                        {/* Thumbnail image preview */}
+                                        <TableCell>
+                                            {row.thumbnail_img ? (
+                                                <a href={row.thumbnail_img} target="_blank" rel="noopener noreferrer">
+                                                    <img
+                                                        src={row.thumbnail_img}
+                                                        alt="Thumbnail"
+                                                        style={{
+                                                            width: 60,
+                                                            height: 40,
+                                                            borderRadius: 4,
+                                                            objectFit: "cover",
+                                                            border: "1px solid #ddd",
+                                                        }}
+                                                    />
+                                                </a>
+                                            ) : (
+                                                <span style={{ color: "#999" }}>No Image</span>
+                                            )}
+                                        </TableCell>
+
                                         <TableCell>
                                             <IconButton
                                                 color={row.hidden ? "success" : "warning"}
@@ -444,12 +501,13 @@ const CourseReportTable = () => {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} align="center">
+                                    <TableCell colSpan={7} align="center">
                                         No matching records found
                                     </TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
+
                     </Table>
                 </TableContainer>
 
@@ -461,7 +519,7 @@ const CourseReportTable = () => {
                             color: "#fff",
                         }}
                     >
-                        {isEditing ? "Edit Video" : "Add New Video"}
+                        {isEditing ? "Edit Course" : "Add New Course"}
                     </DialogTitle>
                     <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
                         {/* Category with add option */}
@@ -559,18 +617,6 @@ const CourseReportTable = () => {
                                             ),
                                         }}
                                     />
-
-
-                                    {/* Preview (optional) */}
-                                    {/* {categoryImage && (
-                                        <Box mt={1}>
-                                            <img
-                                                src={URL.createObjectURL(categoryImage)}
-                                                alt="Category Preview"
-                                                style={{ width: "100%", maxHeight: 200, objectFit: "contain", borderRadius: 8 }}
-                                            />
-                                        </Box>
-                                    )} */}
                                 </DialogContent>
 
                                 <DialogActions>
@@ -598,6 +644,7 @@ const CourseReportTable = () => {
                             error={!!errors.name}
                             helperText={errors.name}
                         />
+
                         <TextField
                             label="Course Link"
                             fullWidth
@@ -606,6 +653,38 @@ const CourseReportTable = () => {
                             error={!!errors.link}
                             helperText={errors.link}
                         />
+
+                        {/* Course Image Upload Field */}
+                        <TextField
+                            fullWidth
+                            value={selectedFile ? selectedFile.name : ""}
+                            placeholder="Upload Course Image *"
+                            error={!!errors.image}
+                            helperText={errors.image || "Supported formats: JPG, PNG, GIF. Max size: 5MB"}
+                            InputProps={{
+                                readOnly: true,
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <ImageIcon color="action" />
+                                    </InputAdornment>
+                                ),
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton component="label">
+                                            <UploadFileIcon />
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                hidden
+                                                onChange={handleFileSelect}
+                                            />
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
+                            }}
+                        />
+
+
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={handleClose} color="secondary">

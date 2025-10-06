@@ -106,7 +106,7 @@ const PrimeUserTransactions = ({ showServiceTrans }) => {
     },
   }));
 
- 
+
 
   const StyledTableCell = styled(TableCell)(({ theme }) => ({
     [`&.${tableCellClasses.head}`]: {
@@ -281,9 +281,9 @@ const PrimeUserTransactions = ({ showServiceTrans }) => {
                   </StyledTableCell>
                   {/* <StyledTableCell style={{ fontWeight: 'bold' }} nowrap>Wallet Balance</StyledTableCell>
                                     <StyledTableCell style={{ fontWeight: 'bold' }} nowrap>Cashback Balance</StyledTableCell> */}
-                  <StyledTableCell style={{ fontWeight: "bold" }} nowrap>
+                  {/* <StyledTableCell style={{ fontWeight: "bold" }} nowrap>
                     Reedem Balance
-                  </StyledTableCell>
+                  </StyledTableCell> */}
                   <StyledTableCell style={{ fontWeight: "bold" }} nowrap>
                     Distribution Link
                   </StyledTableCell>
@@ -293,19 +293,19 @@ const PrimeUserTransactions = ({ showServiceTrans }) => {
                 </TableRow>
               </TableHead>
               <TableBody>
-              {showServiceTrans.length > 0 ? (
+                {showServiceTrans.length > 0 ? (
                   (rowsPerPage > 0
                     ? filteredRows.slice(
-                        page * rowsPerPage,
-                        page * rowsPerPage + rowsPerPage
-                      )
+                      page * rowsPerPage,
+                      page * rowsPerPage + rowsPerPage
+                    )
                     : filteredRows
                   ).map((row, index) => (
                     <StyledTableRow
                       key={index}
-                    
+
                     >
-                       <StyledTableCell>
+                      <StyledTableCell>
                         {index + 1 + page * rowsPerPage}
                       </StyledTableCell>
                       <StyledTableCell>{row.registration_date}</StyledTableCell>
@@ -322,7 +322,7 @@ const PrimeUserTransactions = ({ showServiceTrans }) => {
                           " | " +
                           row.refer_mobile}
                       </StyledTableCell>
-                      <StyledTableCell>{row.wallet_balance}</StyledTableCell>
+                      {/* <StyledTableCell>{row.wallet_balance}</StyledTableCell> */}
                       {/* <StyledTableCell>{row.cashback_balance}</StyledTableCell>
                                         <StyledTableCell>{row.reedem_balance}</StyledTableCell> */}
                       <StyledTableCell>
@@ -333,7 +333,7 @@ const PrimeUserTransactions = ({ showServiceTrans }) => {
 
                       <StyledTableCell>
                         <Link href={`/prime-distribution/?id=${row.user_id}`}>
-                          <Button 
+                          <Button
                             variant="contained"
                             size="small"
                             color="success"
@@ -346,7 +346,7 @@ const PrimeUserTransactions = ({ showServiceTrans }) => {
                   ))
                 ) : (
                   <TableRow>
-                         <TableCell
+                    <TableCell
                       colSpan={17}
                       align="center"
                       style={{
@@ -388,7 +388,8 @@ const PrimeUserTransactions = ({ showServiceTrans }) => {
             page={page}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            sx={{ marginTop:"32px",
+            sx={{
+              marginTop: "32px",
               borderTop: "1px solid #e0e0e0",
               padding: "16px",
               backgroundColor: "#f8f9fa",
@@ -416,7 +417,7 @@ const PrimeUserTransactions = ({ showServiceTrans }) => {
 
         <Grid
           container
-          // sx={{ background: "#FFF" }}
+        // sx={{ background: "#FFF" }}
         ></Grid>
       </Grid>
     </main>

@@ -55,6 +55,12 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   "&:last-child td, &:last-child th": {
     border: 0,
   },
+  "& td": {
+    border: `1px solid ${theme.palette.divider}`,
+  },
+  "& th": {
+    border: `1px solid ${theme.palette.divider}`,
+  },
 }));
 
 // Template type options
@@ -94,6 +100,16 @@ const templateTypeOptions = [
   "slab1",
   "slab2",
   "slab3",
+  "slab4",
+  "slab5",
+  "slab6",
+  "slab7",
+  "slab8",
+  "slab9",
+  "slab10",
+  "slab11",
+  "slab12",
+  "slab13",
 ];
 
 // Template variables mapping based on template type
@@ -183,7 +199,7 @@ function MessageSetting() {
     templateType: "",
     body: "",
   });
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const handleAddSlab = async () => {
     if (newSlab.trim() === "") {
@@ -245,32 +261,32 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
   }, []);
 
 
-const fetchMessages = async () => {
-  setLoading(true);
-  setError("");
-  try {
-    const response = await axios.get(`${API_BASE}api/marketing/all`);
+  const fetchMessages = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await axios.get(`${API_BASE}api/marketing/all`);
 
-    if (response.data.success) {
-      setMessages(response.data.data);
-    } else {
-      setError("Failed to fetch messages");
+      if (response.data.success) {
+        setMessages(response.data.data);
+      } else {
+        setError("Failed to fetch messages");
+      }
+    } catch (error) {
+      if (error.response) {
+        // Server responded with status code not in range 2xx
+        setError(`Server error: ${error.response.status}`);
+      } else if (error.request) {
+        // Request was made but no response received
+        setError("No response from server");
+      } else {
+        // Something else happened
+        setError("Failed to connect to server");
+      }
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    if (error.response) {
-      // Server responded with status code not in range 2xx
-      setError(`Server error: ${error.response.status}`);
-    } else if (error.request) {
-      // Request was made but no response received
-      setError("No response from server");
-    } else {
-      // Something else happened
-      setError("Failed to connect to server");
-    }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleSearch = (value) => setSearchTerm(value);
 

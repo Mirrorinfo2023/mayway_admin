@@ -87,17 +87,51 @@ const InvestMentTransactions = ({ showServiceTrans }) => {
 
     const handleApprove = async (id) => {
         try {
-            const res = await api.put(`/api/prime-requests/${id}`, { status: "approved" });
-            if (res.data.success) {
-                alert("Approved successfully");
-                location.reload();
+            console.log("First API call starting...");
+            const res = await api.post(`/api/prime-requests/${id}`, { status: "approved" });
+            console.log("First API response:", res);
+
+            if (res.status === 200 && res.data.success) {
+                // Current row find करें
+                const currentRow = rows.find(row => row.id === id);
+
+                if (!currentRow) {
+                    alert("Row data not found");
+                    return;
+                }
+
+                const referralPayload = {
+                    plan_id: currentRow.plan_id,
+                    user_id: currentRow.user_id,
+                    sender_user_id: currentRow.sender_user_id,
+                    amount: parseFloat(currentRow.amount),
+                    wallet: "Main"
+                };
+
+                console.log("Referral payload:", referralPayload);
+
+                const referralRes = await api.post(
+                    "/api/referral/plan/d376ca2995b3d140552f1bf6bc31c2eda6c9cfc8",
+                    referralPayload
+                );
+
+                console.log("Second API response:", referralRes);
+
+                if (referralRes.status === 200) {
+                    alert("Approved & referral confirmed successfully");
+                    location.reload();
+                } else {
+                    alert("Approved but referral confirmation failed");
+                }
+            } else {
+                alert("Failed to approve request");
             }
         } catch (error) {
-            console.error(error);
-            alert("Failed to approve request");
+            console.error("Full error details:", error);
+            console.error("Error response:", error.response);
+            alert("Something went wrong");
         }
     };
-
     const openRejectModal = (id) => {
         setCurrentRejectId(id);
         setRejectReason('');
@@ -110,7 +144,7 @@ const InvestMentTransactions = ({ showServiceTrans }) => {
             return;
         }
         try {
-            const res = await api.put(`/api/prime-requests/${currentRejectId}`, { status: "rejected", reason: rejectReason });
+            const res = await api.post(`/api/prime-requests/${currentRejectId}`, { status: "rejected", reason: rejectReason });
             if (res.data.success) {
                 alert("Rejected successfully");
                 location.reload();
@@ -164,8 +198,14 @@ const InvestMentTransactions = ({ showServiceTrans }) => {
                                             <StyledTableCell>{row.last_name}</StyledTableCell>
                                             <StyledTableCell>{row.amount}</StyledTableCell>
                                             <StyledTableCell>{row.remark}</StyledTableCell>
-                                            <StyledTableCell>{row.utr_id?.join(', ')}</StyledTableCell>
                                             <StyledTableCell>
+                                                {Array.isArray(row.utr_id)
+                                                    ? row.utr_id.join(' || ')
+                                                    : typeof row.utr_id === 'string'
+                                                        ? JSON.parse(row.utr_id).join(' || ')
+                                                        : row.utr_id
+                                                }
+                                            </StyledTableCell>                                            <StyledTableCell>
                                                 {row.image_url?.map((img, idx) => (
                                                     <img
                                                         key={idx}

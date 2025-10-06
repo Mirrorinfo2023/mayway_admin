@@ -168,19 +168,27 @@ const IncomeTransactions = ({ showServiceTrans }) => {
       linHeight: 15,
       padding: 7,
       borderRight: "1px solid rgba(224, 224, 224, 1)",
-      borderBottom: 0,
+      borderBottom: "1px solid rgba(224, 224, 224, 1)",
     },
     [`&.${tableCellClasses.body}`]: {
       fontSize: 12,
       linHeight: 15,
       padding: 7,
       borderRight: "1px solid rgba(224, 224, 224, 1)",
+      borderBottom: "1px solid rgba(224, 224, 224, 1)",
     },
   }));
 
   const StyledTableRow = styled(TableRow)(({ theme }) => ({
     "&:nth-of-type(odd)": {
       backgroundColor: theme.palette.action.hover,
+    },
+    // Add border to table rows
+    "& td": {
+      borderBottom: "1px solid rgba(224, 224, 224, 1)",
+    },
+    "& th": {
+      borderBottom: "1px solid rgba(224, 224, 224, 1)",
     },
   }));
 
@@ -285,31 +293,48 @@ const IncomeTransactions = ({ showServiceTrans }) => {
     <main className="p-6 space-y-6">
       <Grid container spacing={4} sx={{ padding: "0px 16px" }}>
         <Grid item={true} xs={12}>
-          <TableContainer component={Paper} className={styles.tableContainer}>
-            <Table aria-label="Otp Report" className={styles.table}>
+          <TableContainer
+            component={Paper}
+            className={styles.tableContainer}
+            sx={{
+              border: "1px solid rgba(224, 224, 224, 1)",
+              borderRadius: "8px",
+              overflow: "hidden"
+            }}
+          >
+            <Table
+              aria-label="Otp Report"
+              className={styles.table}
+              sx={{
+                borderCollapse: "collapse",
+                "& td, & th": {
+                  border: "1px solid rgba(224, 224, 224, 1)",
+                }
+              }}
+            >
               <TableHead>
                 <TableRow className={styles.tableHeadRow}>
-                  <TableCell>Sr No.</TableCell>
-                  <TableCell>Redeem Type</TableCell>
-                  <TableCell>created date</TableCell>
+                  <StyledTableCell>Sr No.</StyledTableCell>
+                  <StyledTableCell>Redeem Type</StyledTableCell>
+                  <StyledTableCell>created date</StyledTableCell>
 
-                  <TableCell>User Name</TableCell>
-                  <TableCell>User Id</TableCell>
-                  <TableCell>Mobile</TableCell>
-                  <TableCell>Amt</TableCell>
-                  <TableCell>Credited Amt[90%]</TableCell>
-                  <TableCell>Deducted Amt[10%]</TableCell>
-                  <TableCell>Transaction No</TableCell>
-                  <TableCell>Payout Type</TableCell>
-                  <TableCell>Account No.</TableCell>
-                  <TableCell>Account holder name</TableCell>
-                  <TableCell>Bank name</TableCell>
-                  <TableCell>IFSC Code</TableCell>
-                  <TableCell>Remarks</TableCell>
+                  <StyledTableCell>User Name</StyledTableCell>
+                  <StyledTableCell>User Id</StyledTableCell>
+                  <StyledTableCell>Mobile</StyledTableCell>
+                  <StyledTableCell>Amt</StyledTableCell>
+                  <StyledTableCell>Credited Amt[90%]</StyledTableCell>
+                  <StyledTableCell>Deducted Amt[10%]</StyledTableCell>
+                  <StyledTableCell>Transaction No</StyledTableCell>
+                  <StyledTableCell>Payout Type</StyledTableCell>
+                  <StyledTableCell>Account No.</StyledTableCell>
+                  <StyledTableCell>Account holder name</StyledTableCell>
+                  <StyledTableCell>Bank name</StyledTableCell>
+                  <StyledTableCell>IFSC Code</StyledTableCell>
+                  <StyledTableCell>Remarks</StyledTableCell>
 
-                  <TableCell>Approval Remarks</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Action</TableCell>
+                  <StyledTableCell>Approval Remarks</StyledTableCell>
+                  <StyledTableCell>Status</StyledTableCell>
+                  <StyledTableCell>Action</StyledTableCell>
                 </TableRow>
               </TableHead>
 
@@ -322,32 +347,31 @@ const IncomeTransactions = ({ showServiceTrans }) => {
                     )
                     : filteredRows
                   ).map((row, index) => (
-                    <TableRow key={index} className={styles.tableRow}>
-                      <TableCell>{index + 1 + page * rowsPerPage}</TableCell>
-                      <TableCell>{row.category}</TableCell>
-                        <TableCell className={styles.redeemDate}>
+                    <StyledTableRow key={index} className={styles.tableRow}>
+                      <StyledTableCell>{index + 1 + page * rowsPerPage}</StyledTableCell>
+                      <StyledTableCell>{row.category}</StyledTableCell>
+                      <StyledTableCell className={styles.redeemDate}>
                         {row.redeem_date}
-                      </TableCell>
+                      </StyledTableCell>
 
+                      <StyledTableCell>{row.first_name + " " + row.last_name}</StyledTableCell>
 
-                      <TableCell>{row.first_name + " " + row.last_name}</TableCell>
+                      <StyledTableCell className={styles.userIdCell}>{row.mlm_id}</StyledTableCell>
 
-                      <TableCell className={styles.userIdCell}>{row.mlm_id}</TableCell>
+                      <StyledTableCell>{row.mobile}</StyledTableCell>
+                      <StyledTableCell className={styles.amountCell}>{row.amount}</StyledTableCell>
+                      <StyledTableCell>{(row.amount * 0.9).toFixed(2)}</StyledTableCell>
+                      <StyledTableCell>{(row.amount * 0.1).toFixed(2)}</StyledTableCell>
+                      <StyledTableCell>{row.trans_no}</StyledTableCell>
+                      <StyledTableCell>{row.payout_type}</StyledTableCell>
+                      <StyledTableCell>{row.account_number}</StyledTableCell>
+                      <StyledTableCell>{row.account_holder}</StyledTableCell>
+                      <StyledTableCell>{row.bank_name}</StyledTableCell>
+                      <StyledTableCell>{row.ifsc_code}</StyledTableCell>
+                      <StyledTableCell>{row.remarks}</StyledTableCell>
+                      <StyledTableCell>{row.rejection_reason}</StyledTableCell>
 
-                      <TableCell>{row.mobile}</TableCell>
-                      <TableCell className={styles.amountCell}>{row.amount}</TableCell>
-                      <TableCell>{(row.amount * 0.9).toFixed(2)}</TableCell>
-                      <TableCell>{(row.amount * 0.1).toFixed(2)}</TableCell>
-                      <TableCell>{row.trans_no}</TableCell>
-                      <TableCell>{row.payout_type}</TableCell>
-                      <TableCell>{row.account_number}</TableCell>
-                      <TableCell>{row.account_holder}</TableCell>
-                      <TableCell>{row.bank_name}</TableCell>
-                      <TableCell>{row.ifsc_code}</TableCell>
-                      <TableCell>{row.remarks}</TableCell>
-                      <TableCell>{row.rejection_reason}</TableCell>
-                    
-                      <TableCell
+                      <StyledTableCell
                         className={
                           row.status === 1
                             ? styles.statusApproved
@@ -361,9 +385,9 @@ const IncomeTransactions = ({ showServiceTrans }) => {
                           : row.status === 2
                             ? "Rejected"
                             : "Pending"}
-                      </TableCell>
-                      <TableCell>
-                        <StyledTableCell className={styles.actionButtons}>
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <Box className={styles.actionButtons}>
                           {row.status === 0 ? (
                             <Box sx={{ display: "flex", gap: 1 }}>
                               <Button
@@ -451,21 +475,21 @@ const IncomeTransactions = ({ showServiceTrans }) => {
                               </Typography>
                             </Box>
                           </Modal>
-                        </StyledTableCell>
-                      </TableCell>
-                    </TableRow>
+                        </Box>
+                      </StyledTableCell>
+                    </StyledTableRow>
                   ))
                 ) : (
-                  <TableRow>
-                    <TableCell colSpan={18} align="center">
+                  <StyledTableRow>
+                    <StyledTableCell colSpan={19} align="center">
                       <Box className={styles.noRecordsBox}>
                         <InfoOutlinedIcon className={styles.noRecordsIcon} />
                         <Typography className={styles.noRecordsText}>
                           No Records Found.
                         </Typography>
                       </Box>
-                    </TableCell>
-                  </TableRow>
+                    </StyledTableCell>
+                  </StyledTableRow>
                 )}
               </TableBody>
             </Table>
