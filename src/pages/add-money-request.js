@@ -164,10 +164,10 @@ function AddMoneyRequestReport() {
     const isSearchTermMatch =
       (row.user_name &&
         row.user_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (row.user_id &&
-        row.user_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (row.mobile && row.mobile.includes(searchTerm)) ||
-      (row.transaction_id && row.transaction_id.includes(searchTerm)) ||
+      // (row.user_id &&
+      //   row.user_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      // (row.mobile && row.mobile.includes(searchTerm)) ||
+      // (row.transaction_id && row.transaction_id.includes(searchTerm)) ||
       (row.amount && row.amount.toString().includes(searchTerm));
 
     return isStatusMatch && isSearchTermMatch;

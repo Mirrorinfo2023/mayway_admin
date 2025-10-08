@@ -50,9 +50,9 @@ const AddMoneyRequestTransactions = ({ showServiceTrans }) => {
     const term = searchTerm.toLowerCase();
     return (
       (row.user_name && row.user_name.toLowerCase().includes(term)) ||
-      (row.user_id && row.user_id.toLowerCase().includes(term)) ||
-      (row.mobile && row.mobile.includes(term)) ||
-      (row.transaction_id && row.transaction_id.toLowerCase().includes(term)) ||
+      // (row.user_id && row.user_id.toLowerCase().includes(term)) ||
+      // (row.mobile && row.mobile.includes(term)) ||
+      // (row.transaction_id && row.transaction_id.toLowerCase().includes(term)) ||
       (row.amount && row.amount.toString().includes(term))
     );
   });
@@ -268,14 +268,14 @@ const AddMoneyRequestTransactions = ({ showServiceTrans }) => {
                         <StyledTableCell>
                           {index + 1 + page * rowsPerPage}
                         </StyledTableCell>
-                        <StyledTableCell>{row.user_name}</StyledTableCell>
+                        <StyledTableCell>{row.first_name} {row.last_name} </StyledTableCell>
                         <StyledTableCell>{row.user_id}</StyledTableCell>
                         <StyledTableCell>{row.mobile}</StyledTableCell>
-                        <StyledTableCell>{row.payment_mode}</StyledTableCell>
+                        <StyledTableCell>{row.category}</StyledTableCell>
                         <StyledTableCell>{row.amount}</StyledTableCell>
-                        <StyledTableCell>{row.transaction_id}</StyledTableCell>
-                        <StyledTableCell>{row.upi_id || "-"}</StyledTableCell>
-                        <StyledTableCell>{row.created_at}</StyledTableCell>
+                        <StyledTableCell>{row.trans_no}</StyledTableCell>
+                        <StyledTableCell>{row.trans_no || "-"}</StyledTableCell>
+                        <StyledTableCell>{row.created_on}</StyledTableCell>
                         <StyledTableCell>{row.remarks || "-"}</StyledTableCell>
                         <StyledTableCell
                           style={{
@@ -283,16 +283,16 @@ const AddMoneyRequestTransactions = ({ showServiceTrans }) => {
                               row.status === 1
                                 ? "green"
                                 : row.status === 2
-                                ? "red"
-                                : "blue",
+                                  ? "red"
+                                  : "blue",
                             fontWeight: 600,
                           }}
                         >
                           {row.status === 1
                             ? "Approved"
                             : row.status === 2
-                            ? "Rejected"
-                            : "Pending"}
+                              ? "Rejected"
+                              : "Pending"}
                         </StyledTableCell>
                         <StyledTableCell>
                           <Box
@@ -361,41 +361,41 @@ const AddMoneyRequestTransactions = ({ showServiceTrans }) => {
                 )}
               </TableBody>
             </Table>
-            
+
           </TableContainer>
           <StyledTablePagination
-              rowsPerPageOptions={rowsPerPageOptions}
-              component="div"
-              count={filteredRows.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              sx={{
-                marginTop: "32px",
-                borderTop: "1px solid #e0e0e0",
-                padding: "16px",
-                backgroundColor: "#f8f9fa",
-                borderRadius: "0 0 16px 16px",
-                "& .MuiTablePagination-select": {
-                  minWidth: "80px",
+            rowsPerPageOptions={rowsPerPageOptions}
+            component="div"
+            count={filteredRows.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            sx={{
+              marginTop: "32px",
+              borderTop: "1px solid #e0e0e0",
+              padding: "16px",
+              backgroundColor: "#f8f9fa",
+              borderRadius: "0 0 16px 16px",
+              "& .MuiTablePagination-select": {
+                minWidth: "80px",
+              },
+              "& .MuiTablePagination-menu": {
+                "& .MuiPaper-root": {
+                  maxHeight: "200px",
                 },
-                "& .MuiTablePagination-menu": {
-                  "& .MuiPaper-root": {
-                    maxHeight: "200px",
-                  },
-                },
-                "& .MuiTablePagination-selectRoot": {
-                  marginRight: "32px",
-                },
-                "& .MuiTablePagination-toolbar": {
-                  minHeight: "52px",
-                },
-                "& .MuiTablePagination-spacer": {
-                  flex: "none",
-                },
-              }}
-            />
+              },
+              "& .MuiTablePagination-selectRoot": {
+                marginRight: "32px",
+              },
+              "& .MuiTablePagination-toolbar": {
+                minHeight: "52px",
+              },
+              "& .MuiTablePagination-spacer": {
+                flex: "none",
+              },
+            }}
+          />
         </Grid>
       </Grid>
 

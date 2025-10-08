@@ -86,7 +86,7 @@ let menuArray3 = [
   { redirect: 'kyc-report', name: 'KYC Report', parent: 'wallet' },
   { redirect: 'feedback-report', name: 'Feedback Report', parent: 'wallet' },
   { redirect: 'investment', name: 'Prime', parent: 'wallet' },
-  // { redirect: 'add-money-request', name: 'Add Money Request', parent: 'wallet' },
+  { redirect: 'add-money-request', name: 'Add Money Request', parent: 'wallet' },
   // { redirect: 'cashback-report', name: 'Cashback Report', parent: 'wallet' },
   // { redirect: 'prime-wallet-report', name: 'Prime Wallet Report', parent: 'wallet' },
   // { redirect: 'epin-wallet-summary', name: 'User Epin Summary', parent: 'wallet' },
