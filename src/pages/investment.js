@@ -197,7 +197,7 @@ function InvestmentReport(props) {
                 <Grid item xs={12}>
                     <FilterRow>
                         <Box display={'inline-block'} justifyContent={'space-between'} alignItems={'right'} style={{ width: '60%', verticalAlign: 'center' }} >
-                            <Typography variant="h5" sx={{ padding: 2 }}>Investment</Typography>
+                            <Typography variant="h5" sx={{ padding: 2 }}>Prime Activation </Typography>
                         </Box>
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
                             <DatePicker

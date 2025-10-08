@@ -120,7 +120,6 @@ export default function Dashboard() {
     fetchDashboardData();
   }, []);
 
-  // ✅ Fetch Prime User Data (No calculations, use backend data)
   useEffect(() => {
     const fetchPrimeData = async () => {
       try {
