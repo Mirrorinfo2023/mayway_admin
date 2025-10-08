@@ -8,7 +8,7 @@ import { Padding, Visibility, VisibilityOff } from "@mui/icons-material";
 import { DataEncrypt, DataDecrypt } from '../../../utils/encryption';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { ArrowForward, Person, Lock } from "@mui/icons-material";
-import styles from "./Login.module.css"; // Import styles
+import styles from "@/components/Login/Login.module.css"; // Import styles
 
 const UserName = ({ handleChange, onForgotPassword }) => {
 
