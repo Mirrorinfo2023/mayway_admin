@@ -76,9 +76,9 @@ let menuArray2 = [
   { redirect: 'income-report', name: 'Income Report', parent: 'networking' },
   { redirect: 'prime-user-report', name: 'Prime User Report', parent: 'networking' },
   { redirect: 'courses', name: 'Courses', parent: 'networking' },
-    { redirect: 'profit-return', name: 'Profit Return', parent: 'masters' },
-
-  // { redirect: 'insurance-list', name: 'Insurance List', parent: 'networking' },
+  { redirect: 'profit-return', name: 'Profit Return', parent: 'networking' },
+  { redirect: 'ip-management', name: 'Ip Management', parent: 'networking' },
+  
   // { redirect: 'prime-product-list', name: 'Prime Product Report', parent: 'networking' },
   // { redirect: 'package-purchase-list', name: 'Package Purchase Request', parent: 'networking' },
 ]
@@ -90,7 +90,7 @@ let menuArray3 = [
   { redirect: 'kyc-report', name: 'KYC Report', parent: 'wallet' },
   { redirect: 'feedback-report', name: 'Feedback Report', parent: 'wallet' },
   { redirect: 'investment', name: 'Prime Activation', parent: 'wallet' },
-  // { redirect: 'add-money-request', name: 'Add Money Request', parent: 'wallet' },
+  { redirect: 'add-money-request', name: 'Add Money Request', parent: 'wallet' },
   // { redirect: 'cashback-report', name: 'Cashback Report', parent: 'wallet' },
   // { redirect: 'prime-wallet-report', name: 'Prime Wallet Report', parent: 'wallet' },
   // { redirect: 'epin-wallet-summary', name: 'User Epin Summary', parent: 'wallet' },
@@ -236,12 +236,12 @@ function Layout(props) {
     } else if (checkPathInMenuArray(menuArray6)) {
       setSelectedMenu(6);
       setCurrentMenu('staff');
-    } 
+    }
     // else if (checkPathInMenuArray(menuArray7)) {
     //   setSelectedMenu(7);
     //   setCurrentMenu('setting');
     // }
-     else {
+    else {
       setSelectedMenu(0);
     }
   }, [pathName]);

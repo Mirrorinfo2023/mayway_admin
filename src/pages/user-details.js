@@ -29,7 +29,7 @@ import PersonOffIcon from "@mui/icons-material/PersonOff";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import PersonIcon from "@mui/icons-material/Person";
 import AddNewUser from "./AddUserDialog"
-import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt"; // 👈 add new user icon
+import SetCashback from "./Set-user-Cashback"
 
 const drawWidth = 220;
 const getDate = (timeZone) => {
@@ -54,6 +54,7 @@ const getDate = (timeZone) => {
 };
 function TransactionHistory(props) {
   const [openDialog, setOpenDialog] = useState(false);
+  const [cashbackDialog, setCashbackDialog] = useState(false);
 
   const [showServiceTrans, setShowServiceTrans] = useState({});
   const [masterReport, setmasterReport] = useState({});
@@ -381,7 +382,7 @@ function TransactionHistory(props) {
               onClick={() => setOpenDialog(true)} // ⬅️ open dialog
               sx={{
                 borderRadius: 2,
-                width: "30%",
+                width: "40%",
                 fontWeight: 700,
                 fontSize: 16,
                 px: 4,
@@ -392,16 +393,40 @@ function TransactionHistory(props) {
                 whiteSpace: "nowrap",
                 gap: .1,
               }}
-              startIcon={<PersonAddAltIcon />} // 👈 user add icon
+
             >
               Add New User
             </Button>
+            <Button
+              variant="contained"
+              onClick={() => setCashbackDialog(true)} // ⬅️ open dialog
+              sx={{
+                borderRadius: 2,
+                width: "40%",
+                fontWeight: 700,
+                fontSize: 16,
+                px: 4,
+                py: 1.2,
+                background: "linear-gradient(90deg, #2196f3 0%, #21cbf3 100%)",
+                boxShadow: "0 2px 8px 0 rgba(33, 203, 243, 0.15)",
+                textTransform: "none",
+                whiteSpace: "nowrap",
+                gap: .1,
+              }}
+            >
+              Set Cashback
+            </Button>
+
           </FilterRow>
         </Grid>
       </Grid>
       <Transactions showServiceTrans={filteredRows} />
 
       <AddNewUser open={openDialog} onClose={() => setOpenDialog(false)} />
+      <SetCashback
+        open={cashbackDialog}
+        onClose={() => setCashbackDialog(false)}
+      />
 
     </Layout>
   );
