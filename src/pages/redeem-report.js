@@ -3,6 +3,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Cookies from "js-cookie";
 import api from "../../utils/api";
+import { DataEncrypt, DataDecrypt } from "../../utils/encryption";
 import withAuth from "../../utils/withAuth";
 import { callAlert } from "../../redux/actions/alert";
 import Layout from "@/components/Dashboard/layout";
@@ -121,26 +122,32 @@ function RedeemReport(props) {
 
   useEffect(() => {
     const getTnx = async () => {
-      const reqData = {
-        from_date: fromDate.toISOString().split("T")[0],
-        to_date: toDate.toISOString().split("T")[0],
-      };
-
       try {
-        const response = await api.post(
-          "/api/report/get-redeem-report",
-          reqData
-        );
+        // 🧩 Step 1: Prepare and encrypt request payload
+        const payload = {
+          from_date: fromDate.toISOString().split("T")[0],
+          to_date: toDate.toISOString().split("T")[0],
+        };
+
+        const encryptedReq = DataEncrypt(JSON.stringify(payload));
+        const reqData = { data: encryptedReq };
+
+        // 🧩 Step 2: Send encrypted data to backend
+        const response = await api.post("/api/report/get-redeem-report", reqData);
 
         if (response.status === 200) {
-          setShowServiceTrans(response.data.data);
-          setReport(response.data.report);
+          // 🧩 Step 3: Decrypt the backend’s response
+          const decryptedData = DataDecrypt(response.data.data || "");
+          const parsedData = decryptedData;
+
+          // 🧩 Step 4: Use decrypted data
+          setShowServiceTrans(parsedData.data);
+          setReport(parsedData.report);
         }
       } catch (error) {
+        console.error("❌ Error fetching report:", error);
         if (error?.response?.data?.error) {
-          dispatch(
-            callAlert({ message: error.response.data.error, type: "FAILED" })
-          );
+          dispatch(callAlert({ message: error.response.data.error, type: "FAILED" }));
         } else {
           dispatch(callAlert({ message: error.message, type: "FAILED" }));
         }
@@ -151,6 +158,7 @@ function RedeemReport(props) {
       getTnx();
     }
   }, [fromDate, toDate, dispatch]);
+
 
   const handleFromDateChange = (date) => {
     setFromDate(date);

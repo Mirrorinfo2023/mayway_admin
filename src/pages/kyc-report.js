@@ -30,7 +30,7 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import { styled } from "@mui/material/styles";
 import UploadKyc from "./UploadKyc";
 import axios from "axios";
-
+import { DataDecrypt, DataEncrypt } from "../../utils/encryption";
 const drawWidth = 220;
 
 const StatCard = styled(Paper)(({ bgcolor }) => ({
@@ -120,18 +120,43 @@ function KycReport() {
 
   useEffect(() => {
     const getTnx = async () => {
-      const reqData = {
-        from_date: fromDate.toISOString().split("T")[0],
-        to_date: toDate.toISOString().split("T")[0],
-      };
       try {
-        const response = await api.post("/api/users/get-kyc-report", reqData);
-        console.log("response is: ",response)
-        if (response.status === 200) {
-          setShowServiceTrans(response.data.data || []);
-          setMasterReport(response.data.report || {});
+        // 🔹 Prepare data
+        const reqData = {
+          from_date: fromDate.toISOString().split("T")[0],
+          to_date: toDate.toISOString().split("T")[0],
+        };
+
+        // 🔹 Encrypt before sending
+        const encryptedPayload = DataEncrypt(JSON.stringify(reqData));
+
+        // 🔹 Send encrypted data
+        const response = await api.post("/api/users/get-kyc-report", { data: encryptedPayload });
+
+        console.log("Encrypted response:", response.data);
+
+        // 🔹 Decrypt response
+        if (response.data?.data) {
+          const decryptedResp = DataDecrypt(response.data.data);
+
+          console.log("Decrypted response:", decryptedResp);
+
+          if (decryptedResp.status === 200) {
+            setShowServiceTrans(decryptedResp.data || []);
+            setMasterReport(decryptedResp.report || {});
+          } else {
+            dispatch(
+              callAlert({
+                message: decryptedResp.message || "Failed to fetch KYC report",
+                type: "FAILED",
+              })
+            );
+          }
+        } else {
+          dispatch(callAlert({ message: "Invalid response from server", type: "FAILED" }));
         }
       } catch (error) {
+        console.error("Error fetching KYC report:", error);
         dispatch(
           callAlert({
             message: error?.response?.data?.error || error.message,
@@ -140,6 +165,7 @@ function KycReport() {
         );
       }
     };
+
     getTnx();
   }, [fromDate, toDate, dispatch]);
 

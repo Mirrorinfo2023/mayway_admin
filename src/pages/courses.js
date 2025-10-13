@@ -73,18 +73,19 @@ const CourseReportTable = () => {
                 const res = await api.post("/api/courses_video/getAllcategory");
                 console.log("res is: ", res);
 
-                if (res.data?.status === 200) {
-                    // Create a dictionary of category_id to category_name
-                    const categoryDict = res.data.data.reduce((acc, cat) => {
-                        acc[cat.id] = cat.title;
+                if (res.data?.data) {
+                    const decryptedResp = DataDecrypt(res.data.data)
+                    if (decryptedResp.status === 200) {
+                        // Create a dictionary of category_id to category_name
+                        const categoryDict = decryptedResp.data.reduce((acc, cat) => {
+                            acc[cat.id] = cat.title;
+                            return acc;
+                        }, {});
 
-                        return acc;
-                    }, {});
-                    setCategories(categoryDict);
-
-
-                } else {
-                    console.error("Failed to fetch categories:", res.data?.message);
+                        setCategories(categoryDict);
+                    } else {
+                        console.error("Failed to fetch categories:", decryptedResp.message);
+                    }
                 }
             } catch (err) {
                 console.error("Failed to fetch categories:", err);
@@ -96,40 +97,39 @@ const CourseReportTable = () => {
 
     // 🔹 Fetch course videos from API
     useEffect(() => {
-        const fetchVideos = async () => {
-            try {
-                const res = await api.post("/api/courses_video/get-videos");
-                console.log("res from get video course is: ", res);
+        fetchVideos();
+    }, [categories]);
 
-                if (res.data?.status === 200) {
-                    const videos = res.data.data;
+    const fetchVideos = async () => {
+        try {
+            const res = await api.post("/api/courses_video/get-videos");
+            console.log("res ", res)
+            if (res.data?.data) {
+                const decryptedResp = DataDecrypt(res.data.data);
 
-                    // If backend sends a single object, normalize it into an array
+                if (decryptedResp.status === 200) {
+                    const videos = decryptedResp.data;
                     const videoArray = Array.isArray(videos) ? videos : [videos];
 
                     setRows(
-                        videoArray.map((vid) => ({
+                        videoArray.map(vid => ({
                             id: vid.id,
                             date: formatDate(vid.created_on),
                             category: categories[vid.category_id] || "N/A",
                             name: vid.title,
                             link: vid.video_link,
-                            status: vid.status, // ✅ keep original status from backend
-                            thumbnail_img: vid.thumbnail_img
+                            status: vid.status,
+                            thumbnail_img: vid.thumbnail_img,
                         }))
                     );
-
                 } else {
-                    console.error("Failed to fetch videos:", res.data?.message);
+                    console.error("Failed to fetch videos:", decryptedResp.message);
                 }
-            } catch (err) {
-                console.error("Error fetching videos:", err);
             }
-        };
-
-        fetchVideos();
-    }, [categories]);
-
+        } catch (err) {
+            console.error("Error fetching videos:", err);
+        }
+    };
 
 
     // Dialog controls
@@ -196,13 +196,13 @@ const CourseReportTable = () => {
         setOpen(true);
     };
 
-    // Submit (Add/Update)
+
     const handleSubmit = async () => {
         if (!validateForm()) return;
 
         try {
             if (isEditing && editId) {
-                // 🔹 UPDATE (send JSON, not FormData)
+                // 🔹 UPDATE (JSON payload)
                 const payload = {
                     video_id: editId,
                     title: formData.name,
@@ -211,38 +211,50 @@ const CourseReportTable = () => {
                     status: 1,
                 };
 
-                console.log("Update payload:", payload);
+                // Encrypt payload
+                const encryptedPayload = DataEncrypt(JSON.stringify(payload));
 
-                const res = await api.post("/api/courses_video/update-video", payload, {
-                    headers: { "Content-Type": "application/json" },
-                });
+                const res = await api.post("/api/courses_video/update-video", { data: encryptedPayload });
 
-                if (res.data.status === 200) {
-                    alert("Course updated successfully!");
-                    setRows(
-                        rows.map(r =>
-                            r.id === editId
-                                ? {
-                                    ...r,
-                                    category: categories[formData.category] || "N/A",
-                                    name: formData.name,
-                                    link: formData.link,
-                                    status: 1,
-                                }
-                                : r
-                        )
-                    );
-                    handleClose();
-                } else {
-                    alert(res.data.message || "Failed to update video");
+                if (res.data?.data) {
+                    const decryptedResp = DataDecrypt(res.data.data);
+
+                    if (decryptedResp.status === 200) {
+                        alert(decryptedResp.message);
+
+                        setRows(
+                            rows.map(r =>
+                                r.id === editId
+                                    ? {
+                                        ...r,
+                                        category: categories[formData.category] || "N/A",
+                                        name: formData.name,
+                                        link: formData.link,
+                                        status: 1,
+                                    }
+                                    : r
+                            )
+                        );
+
+                        handleClose();
+                    } else {
+                        alert(decryptedResp.message || "Failed to update video");
+                    }
                 }
             } else {
-                // 🔹 ADD NEW (send FormData because of possible image)
+                // 🔹 ADD NEW (FormData for file upload)
+                // 🔹 ADD NEW (FormData for file upload)
+                const payload = {
+                    title: formData.name,
+                    video_link: formData.link,
+                    category_id: formData.category,
+                    status: 1,
+                };
+
+                const encryptedPayload = DataEncrypt(JSON.stringify(payload));
+
                 const formDataToSend = new FormData();
-                formDataToSend.append("title", formData.name);
-                formDataToSend.append("video_link", formData.link);
-                formDataToSend.append("category_id", formData.category);
-                formDataToSend.append("status", "1");
+                formDataToSend.append("data", encryptedPayload);
 
                 if (selectedFile) {
                     formDataToSend.append("image", selectedFile);
@@ -252,32 +264,23 @@ const CourseReportTable = () => {
                     headers: { "Content-Type": "multipart/form-data" },
                 });
 
-                if (res.data.status === 200 || res.data.status === 201) {
-                    alert("Course added successfully!");
-                    setRows([
-                        ...rows,
-                        {
-                            id: res.data.data.insertId || rows.length + 1,
-                            category: categories[formData.category] || "N/A",
-                            name: formData.name,
-                            link: formData.link,
-                            status: 1,
-                            date: new Date().toLocaleString(),
-                        },
-                    ]);
-                    handleClose();
-                } else {
-                    alert(res.data.message || "Failed to add video");
+                if (res.data?.data) {
+                    const decryptedResp = DataDecrypt(res.data.data);
+                    if (decryptedResp.status === 201) {
+                        alert("Course added successfully!");
+                        fetchVideos();
+                        handleClose();
+                    } else {
+                        alert(decryptedResp.message || "Failed to add video");
+                    }
                 }
+
             }
         } catch (err) {
             console.error(err);
             alert("Something went wrong");
         }
     };
-
-
-
 
     const handleAddCategorySubmit = async () => {
         if (!newCategoryName.trim()) {
@@ -287,36 +290,49 @@ const CourseReportTable = () => {
         setCategoryErrors({});
 
         try {
+            // Encrypt the text fields only
+            const payload = {
+                category_name: newCategoryName,
+                description: newCategoryDescription,
+                user_id: formData.user_id || 1, // fallback
+            };
+
+            const encryptedData = DataEncrypt(JSON.stringify(payload));
+
+            // Prepare FormData
             const formDataToSend = new FormData();
-            formDataToSend.append("category_name", newCategoryName);
-            formDataToSend.append("description", newCategoryDescription);
+            formDataToSend.append("data", encryptedData);
             if (categoryImage) formDataToSend.append("image", categoryImage);
-            formDataToSend.append("user_id", formData.user_id || 1); // fallback if user_id missing
 
             const res = await api.post("/api/courses_video/addcategory", formDataToSend, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
-            console.log("res is: ", res)
-            if (res.data.status === 201) {
-                alert(res.data.message || "Category added successfully!");
-                const newCategory = res.data.data;
-                setCategories({
-                    ...categories,
-                    [newCategory.id]: newCategory.category_name,
-                });
-                setCategoryOpen(false);
-                setNewCategoryName("");
-                setNewCategoryDescription("");
-                setCategoryImage(null);
-            } else {
-                alert(res.data.error || "Something went wrong");
+            if (res.data?.data) {
+                const decryptedResp = DataDecrypt(res.data.data);
+
+                if (decryptedResp.status === 201) {
+                    alert(decryptedResp.message || "Category added successfully!");
+                    const newCategory = decryptedResp.data;
+
+                    setCategories({
+                        ...categories,
+                        [newCategory.id]: newCategory.category_name,
+                    });
+                    setCategoryOpen(false);
+                    setNewCategoryName("");
+                    setNewCategoryDescription("");
+                    setCategoryImage(null);
+                } else {
+                    alert(decryptedResp.message || "Something went wrong");
+                }
             }
         } catch (err) {
-            console.error("Failed to add category:", err.response?.data || err.message);
-            alert(err.response?.data?.error || "Something went wrong");
+            console.error("Failed to add category:", err);
+            alert("Something went wrong");
         }
     };
+
 
     // Confirm dialog handler
     const confirmActionHandler = () => {
@@ -327,15 +343,20 @@ const CourseReportTable = () => {
     // Hide/Unhide
     const handleToggleHide = async (id) => {
         try {
-            const res = await api.post("/api/courses_video/hide-video", { video_id: id });
+            // 🔹 Encrypt the payload
+            const payload = { video_id: id };
+            const encryptedData = DataEncrypt(JSON.stringify(payload));
 
-            if (res.data.status === 200) {
-                // Update local state
-                setRows(rows.map(r =>
-                    r.id === id ? { ...r, status: res.data.newStatus } : r
-                ));
-            } else {
-                alert(res.data.message || "Failed to update video status");
+            const res = await api.post("/api/courses_video/hide-video", { data: encryptedData });
+
+            if (res.data?.data) {
+                const decryptedResp = DataDecrypt(res.data.data);
+
+                if (decryptedResp.status === 200) {
+                    setRows(rows.map(r => r.id === id ? { ...r, status: decryptedResp.newStatus } : r));
+                } else {
+                    alert(decryptedResp.message || "Failed to update video status");
+                }
             }
         } catch (err) {
             console.error("Toggle hide error:", err);
@@ -343,17 +364,26 @@ const CourseReportTable = () => {
         }
     };
 
+
     // Delete
     const handleDelete = (id) => {
         setConfirmAction(() => async () => {
             try {
-                const res = await api.post("/api/courses_video/delete-video-course", { video_id: id });
-                console.log("res is: ", res)
-                if (res.data.status === 200) {
-                    console.log("Course deleted successfully!");
-                    setRows(rows.filter((row) => row.id !== id));
-                } else {
-                    alert(res.data.message || "Failed to delete video");
+                // 🔹 Encrypt the payload
+                const payload = { video_id: id };
+                const encryptedData = DataEncrypt(JSON.stringify(payload));
+
+                const res = await api.post("/api/courses_video/delete-video-course", { data: encryptedData });
+
+                if (res.data?.data) {
+                    const decryptedResp = DataDecrypt(res.data.data);
+
+                    if (decryptedResp.status === 200) {
+                        console.log("Course deleted successfully!");
+                        setRows(rows.filter((row) => row.id !== id));
+                    } else {
+                        alert(decryptedResp.message || "Failed to delete video");
+                    }
                 }
             } catch (err) {
                 console.error("Delete error:", err);
@@ -363,7 +393,6 @@ const CourseReportTable = () => {
         setConfirmOpen(true);
     };
 
-
     // Filter rows
     const filteredRows = rows.filter(
         (row) =>
@@ -372,8 +401,8 @@ const CourseReportTable = () => {
                 row.category.toLowerCase().includes(search.toLowerCase()))
     );
 
-    console.log("rows: ", rows)
-    console.log("filteredRows: ", filteredRows)
+    // console.log("rows: ", rows)
+    // console.log("filteredRows: ", filteredRows)
     return (
         <Layout>
             <Box p={3}>

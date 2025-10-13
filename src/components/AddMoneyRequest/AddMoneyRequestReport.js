@@ -21,6 +21,7 @@ import Modal from "@mui/material/Modal";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import { TextareaAutosize } from "@mui/base/TextareaAutosize";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { DataEncrypt, DataDecrypt } from '../../../utils/encryption'; // your encryption file
 
 const style = {
   position: "absolute",
@@ -183,6 +184,7 @@ const AddMoneyRequestTransactions = ({ showServiceTrans }) => {
 
     let note = "";
     let action = "";
+
     if (status === 1) {
       note = "Approve";
       action = "Approve";
@@ -191,30 +193,48 @@ const AddMoneyRequestTransactions = ({ showServiceTrans }) => {
       action = "Reject";
     }
 
-    const requestData = {
-      status: status,
-      note: note,
+    const payload = {
+      status,
+      note,
       add_money_req_id: addMoneyReqId,
-      action: action,
+      action
     };
 
     try {
+      // ✅ Encrypt request
+      const encryptedData = DataEncrypt(JSON.stringify(payload));
+
       const response = await api.post(
         "/api/add_money/update-add-money",
-        requestData
+        { data: encryptedData }
       );
-      if (response.data.status === 200) {
+
+      // ✅ Decrypt response
+      let decryptedResponse;
+      try {
+        decryptedResponse = DataDecrypt(response.data.data); // assuming backend sends { data: <encrypted_string> }
+      } catch (err) {
+        console.error("Failed to decrypt response:", err);
+        decryptedResponse = response.data;
+      }
+
+      console.log("Decrypted Response:", decryptedResponse);
+
+      if (decryptedResponse.status === 200) {
+        alert("💰 Money request processed successfully!");
         window.location.reload();
       } else {
-        console.log("Failed to update status.");
+        alert(decryptedResponse.message || "Request failed on server side");
       }
     } catch (error) {
       console.error("Error:", error);
+      alert("Something went wrong!");
     }
 
     handleCloseModal1();
     handleCloseModal2();
   };
+
 
   return (
     <main className="p-6 space-y-6">

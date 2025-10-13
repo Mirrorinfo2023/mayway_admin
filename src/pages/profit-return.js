@@ -215,6 +215,7 @@ function ProfitReturn(props) {
         try {
             const response = await api.get("/api/admin/profitreturnreport");
 
+            console.log("response ",response)
             if (response.status === 200) {
                 console.log(response.data);
                 setReport(response.data.report || []);
