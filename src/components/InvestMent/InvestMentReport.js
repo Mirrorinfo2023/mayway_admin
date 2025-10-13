@@ -4,6 +4,8 @@ import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 import { styled } from '@mui/material/styles';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import api from "../../../utils/api";
+import { DataDecrypt, DataEncrypt } from "../../../utils/encryption";
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const ThemedTableContainer = styled(TableContainer)(({ theme }) => ({
@@ -87,19 +89,31 @@ const InvestMentTransactions = ({ showServiceTrans }) => {
 
     const handleApprove = async (id) => {
         try {
-            console.log("First API call starting...");
-            const res = await api.post(`/api/prime-requests/${id}`, { status: "approved" });
-            console.log("First API response:", res);
+            console.log("🟢 First API call starting...");
+
+            // ✅ Convert object → string before encryption
+            const payload = JSON.stringify({ status: "approved" });
+            const encryptedPayload = DataEncrypt(payload); // use your existing utility
+
+            console.log("🔒 Encrypted Payload:", encryptedPayload);
+
+            const res = await api.put(`/api/prime-requests/${id}`, { data: encryptedPayload });
+
+            console.log("📩 First API raw response:", res.data);
 
             if (res.status === 200 && res.data.success) {
-                // Current row find करें
-                const currentRow = rows.find(row => row.id === id);
+                // ✅ Decrypt response safely
+                const decryptedResp = DataDecrypt(res.data.data);
+                console.log("🟢 Decrypted Response:", decryptedResp);
 
+                // Find current row
+                const currentRow = rows.find(row => row.id === id);
                 if (!currentRow) {
                     alert("Row data not found");
                     return;
                 }
 
+                // Referral payload
                 const referralPayload = {
                     plan_id: currentRow.plan_id,
                     user_id: currentRow.user_id,
@@ -108,30 +122,33 @@ const InvestMentTransactions = ({ showServiceTrans }) => {
                     wallet: "Main"
                 };
 
-                console.log("Referral payload:", referralPayload);
+                // ✅ Encrypt referral payload (convert to string first)
+                const encryptedReferral = DataEncrypt(JSON.stringify(referralPayload));
+                console.log("🔒 Encrypted Referral Payload:", encryptedReferral);
 
                 const referralRes = await api.post(
                     "/api/referral/plan/d376ca2995b3d140552f1bf6bc31c2eda6c9cfc8",
-                    referralPayload
+                    { data: encryptedReferral }
                 );
 
-                console.log("Second API response:", referralRes);
+                console.log("📩 Second API response:", referralRes.data);
 
                 if (referralRes.status === 200) {
-                    alert("Approved & referral confirmed successfully");
+                    alert("✅ Approved & referral confirmed successfully");
                     location.reload();
                 } else {
-                    alert("Approved but referral confirmation failed");
+                    alert("⚠️ Approved but referral confirmation failed");
                 }
             } else {
-                alert("Failed to approve request");
+                alert("❌ Failed to approve request");
             }
         } catch (error) {
-            console.error("Full error details:", error);
+            console.error("🚨 Full error details:", error);
             console.error("Error response:", error.response);
             alert("Something went wrong");
         }
     };
+
     const openRejectModal = (id) => {
         setCurrentRejectId(id);
         setRejectReason('');
@@ -143,19 +160,34 @@ const InvestMentTransactions = ({ showServiceTrans }) => {
             alert("Please enter a reason for rejection.");
             return;
         }
+
         try {
-            const res = await api.post(`/api/prime-requests/${currentRejectId}`, { status: "rejected", reason: rejectReason });
+            // 🔹 Prepare payload and encrypt
+            const payload = {
+                status: "rejected",
+                reason: rejectReason
+            };
+            const encryptedPayload = DataEncrypt(JSON.stringify(payload));
+
+            // 🔹 Send encrypted payload
+            const res = await api.put(`/api/prime-requests/${currentRejectId}`, { data: encryptedPayload });
+
             if (res.data.success) {
+                // 🔹 Decrypt response if needed
+                const decryptedResp = DataDecrypt(res.data.data);
+                console.log("🟢 Decrypted response:", decryptedResp);
+
                 alert("Rejected successfully");
                 location.reload();
             }
         } catch (error) {
-            console.error(error);
+            console.error("🚨 Submit reject error:", error);
             alert("Failed to reject request");
         } finally {
             setRejectModalOpen(false);
         }
     };
+
 
     const openImage = (url) => window.open(url, "_blank");
 

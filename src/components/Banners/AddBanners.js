@@ -13,6 +13,7 @@ import {
   Typography,
   CircularProgress,
 } from "@mui/material";
+import ReCAPTCHA from "react-google-recaptcha";
 import { useEffect, useState } from "react";
 import api from "../../../utils/api";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
@@ -40,6 +41,7 @@ const AddBannersTransactions = () => {
   const [appCategories, setAppCategories] = useState([]);
   const [appType, setAppType] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
 
   // Fetch categories on mount
   useEffect(() => {
@@ -63,6 +65,10 @@ const AddBannersTransactions = () => {
       return;
     }
 
+    if (!captchaVerified) {
+      alert("Please verify that you are not a robot.");
+      return;
+    }
     const formData = new FormData();
     formData.append("img", selectedFile); // ✅ must match multer field ("img")
     formData.append("title", title);
@@ -183,6 +189,14 @@ const AddBannersTransactions = () => {
                       ))}
                     </Select>
                   </FormControl>
+                </Grid>
+                {/* Google reCAPTCHA */}
+                <Grid item xs={12} md={6}>
+                  <ReCAPTCHA
+                    sitekey="6LdHTbwrAAAAAGawIo2escUPr198m8cP3o_ZzZK1" // replace with your actual key
+                    onChange={() => setCaptchaVerified(true)}
+                    onExpired={() => setCaptchaVerified(false)}
+                  />
                 </Grid>
 
                 {/* File Upload */}

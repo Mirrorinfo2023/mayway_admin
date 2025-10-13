@@ -1,203 +1,139 @@
-import { Box, Button, TextField, InputLabel, Select, MenuItem, Grid, Paper, TableContainer, Typography } from "@mui/material";
+import {
+    Box,
+    Button,
+    TextField,
+    InputLabel,
+    Select,
+    MenuItem,
+    Grid,
+    Paper,
+    TableContainer,
+    Typography,
+    FormControl,
+} from "@mui/material";
 import { useEffect, useState } from "react";
 import api from "../../../utils/api";
-import { styled } from '@mui/material/styles';
-import * as React from 'react';
-import { TextareaAutosize } from '@mui/base/TextareaAutosize';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import FormControl from '@mui/material/FormControl';
+import { styled } from "@mui/material/styles";
+import * as React from "react";
+import { TextareaAutosize } from "@mui/base/TextareaAutosize";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import ReCAPTCHA from "react-google-recaptcha";
 
 const StyledTextarea = styled(TextareaAutosize)(({ theme }) => ({
-  width: '100%',
-  minHeight: '56px',
-  padding: '12px',
-  border: '1px solid #ced4da',
-  borderRadius: '4px',
-  fontSize: '16px',
-  fontFamily: 'inherit',
-  '&:focus': {
-    outline: 'none',
-    borderColor: theme.palette.primary.main,
-    boxShadow: '0 0 0 2px rgba(25, 118, 210, 0.1)',
-  },
+    width: "100%",
+    minHeight: "56px",
+    padding: "12px",
+    border: "1px solid #ced4da",
+    borderRadius: "4px",
+    fontSize: "16px",
+    fontFamily: "inherit",
+    "&:focus": {
+        outline: "none",
+        borderColor: theme.palette.primary.main,
+        boxShadow: "0 0 0 2px rgba(25, 118, 210, 0.1)",
+    },
 }));
 
-const VisuallyHiddenInput = styled('input')({
-  clip: 'rect(0 0 0 0)',
-  clipPath: 'inset(50%)',
-  height: 10,
-  overflow: 'hidden',
-  position: 'absolute',
-  bottom: 0,
-  left: 0,
-  whiteSpace: 'nowrap',
-  width: 10,
+const VisuallyHiddenInput = styled("input")({
+    clip: "rect(0 0 0 0)",
+    clipPath: "inset(50%)",
+    height: 10,
+    overflow: "hidden",
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    whiteSpace: "nowrap",
+    width: 10,
 });
 
 const AddNotificationTransactions = () => {
-
-    const [title, setTitle] = useState('');
-    const [transactionType, setTransactionType] = useState('');
-    const [appType, setAppType] = useState('');
+    const [title, setTitle] = useState("");
+    const [transactionType, setTransactionType] = useState("");
+    const [appType, setAppType] = useState("");
     const [categories, setCategories] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
-    
     const [appCategories, setAppCategories] = useState([]);
-  
-    const [showPicker, setShowPicker] = useState(false);
-    const [message, setMessage] = useState('');
-    const onEmojiClick = (event, emojiObject) => {
-    
-      setMessage((prevInput) => 
-      
-      prevInput + emojiObject.emoji);
+    const [message, setMessage] = useState("");
+    const [recaptchaToken, setRecaptchaToken] = useState("");
 
-      // setMessage((prevInput) => prevInput + emojiObject.emoji, () => {
-        
-      //   console.log('Updated message:', emojiObject.emoji);
-      // });
-      
-      setShowPicker(false);
-    };
-
-    const [selectedColor, setSelectedColor] = useState('#000000'); // Initial color
-
-    const handleColorChange = (color) => {
-      
-      setSelectedColor(color);
-    
-
-    };
-  
-    const handleApplyColor = () => {
-     
-      setMessage((prevInput) =>
-      
-      `<html><body><font color=: ${selectedColor}">${prevInput}</font></body></html>`);
-      // setSelectedColor('#000000');
-
-
-      // let message1='';
-      // message1=`<html><body><font color:"${selectedColor}">${message}</font></body></html>`;
-      
-      // setMessage((prevInput) => prevInput + message1, () => {
-      //   console.log(prevInput)
-       
-      // });
-    
-    };
-
-
-  
     useEffect(() => {
-      const getCategories = async () => {
-        try {
-          const response = await api.get("/api/notification/get-notification-category");
-          // console.log(response);
-          if (response.status === 200) {
-            setCategories(response.data.data.NotificationCategory);
-            setAppCategories(response.data.data.notificationApp);
-          }
-        } catch (error) {
-          console.error("Error fetching categories:", error);
-        }
-      };
-  
-      getCategories();
+        const getCategories = async () => {
+            try {
+                const response = await api.get("/api/notification/get-notification-category");
+                if (response.status === 200) {
+                    setCategories(response.data.data.NotificationCategory);
+                    setAppCategories(response.data.data.notificationApp);
+                }
+            } catch (error) {
+                console.error("Error fetching categories:", error);
+            }
+        };
+        getCategories();
     }, []);
 
-  
-  
-    const handleChange = (event) => {
-      setTransactionType(event.target.value);
+    const handleChange = (event) => setTransactionType(event.target.value);
+    const handleChange1 = (event) => setAppType(event.target.value);
+    const handleFileChange = (event) => setSelectedFile(event.target.files[0]);
+    const handleCancel = () => window.history.back();
+
+    const handleRecaptchaChange = (token) => {
+        setRecaptchaToken(token);
     };
 
-    const handleChange1 = (event) => {
-      setAppType(event.target.value);
-    };
+    const handleSubmit = async () => {
+        if (!title || !transactionType || !appType || !message) {
+            alert("Please fill in all required fields.");
+            return;
+        }
 
-    const handleFileChange = (event) => {
-      const file = event.target.files[0];
-      setSelectedFile(file);
-    };
-    
-    const handleCancel = async () => {
-      window.history.back();
-    };
-  
-   
+        if (!recaptchaToken) {
+            alert("Please complete the reCAPTCHA verification.");
+            return;
+        }
 
-
-    
-       
-      const handleSubmit = async () => {
-       
-        
-          const formData ={
-            'image': selectedFile,
-            'title':title,
-            'type_id':transactionType,
-            'body':message,
-            'app_id':appType
-          }
+        const formData = new FormData();
+        formData.append("image", selectedFile || "");
+        formData.append("title", title);
+        formData.append("body", message);
+        formData.append("type_id", transactionType);
+        formData.append("app_id", appType);
+        formData.append("recaptcha_token", recaptchaToken); // Send token to backend
 
         try {
+            const response = await api.post("/api/notification/add-notification", formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
 
-         
-          const response = await api.post('/api/notification/add-notification', formData,{
-
-            headers:{'content-type': 'multipart/form-data'}
-          
-          
-          });
-        
-          if (response) {
-            window.history.back();
-            alert('Notification Saved  successfully');
-          } else {
-            console.error('Failed to save');
-          }
-
+            if (response.data.status === 200) {
+                alert("Notification saved successfully");
+                window.history.back();
+            } else {
+                console.error("Failed to save notification");
+            }
         } catch (error) {
-          console.error('Error uploading file:', error);
+            console.error("Error uploading notification:", error);
+            alert("Error saving notification. Please try again.");
         }
-        
-      };
-
-     
+    };
 
     return (
         <main className="p-6 space-y-6">
             <Grid container spacing={4} sx={{ padding: 2 }}>
                 <Grid item xs={12}>
-                    <TableContainer 
-                        component={Paper} 
+                    <TableContainer
+                        component={Paper}
                         elevation={3}
-                        sx={{ 
-                            borderRadius: '8px',
-                            overflow: 'hidden'
-                        }}
+                        sx={{ borderRadius: "8px", overflow: "hidden" }}
                     >
-                        <Box
-                            sx={{
-                                padding: '24px',
-                                backgroundColor: '#f8f9fa',
-                                borderBottom: '1px solid #e9ecef'
-                            }}
-                        >
-                            <Typography 
-                                variant="h5" 
-                                sx={{ 
-                                    fontWeight: 600,
-                                    color: '#1a1a1a'
-                                }}
-                            >
+                        <Box sx={{ padding: "24px", backgroundColor: "#f8f9fa", borderBottom: "1px solid #e9ecef" }}>
+                            <Typography variant="h5" sx={{ fontWeight: 600, color: "#1a1a1a" }}>
                                 Add New Notification
                             </Typography>
                         </Box>
 
                         <Box sx={{ p: 3 }}>
                             <Grid container spacing={3}>
+                                {/* Title */}
                                 <Grid item xs={12} md={6}>
                                     <TextField
                                         required
@@ -206,17 +142,11 @@ const AddNotificationTransactions = () => {
                                         variant="outlined"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
-                                        sx={{
-                                            '& .MuiOutlinedInput-root': {
-                                                height: '56px',
-                                                '&:hover fieldset': {
-                                                    borderColor: 'primary.main',
-                                                },
-                                            },
-                                        }}
+                                        sx={{ "& .MuiOutlinedInput-root": { height: "56px" } }}
                                     />
                                 </Grid>
 
+                                {/* Notification Type */}
                                 <Grid item xs={12} md={6}>
                                     <FormControl fullWidth>
                                         <InputLabel id="notification-type-label">Notification Type</InputLabel>
@@ -226,14 +156,7 @@ const AddNotificationTransactions = () => {
                                             value={transactionType}
                                             label="Notification Type"
                                             onChange={handleChange}
-                                            sx={{
-                                                height: '56px',
-                                                '& .MuiOutlinedInput-notchedOutline': {
-                                                    '&:hover': {
-                                                        borderColor: 'primary.main',
-                                                    },
-                                                },
-                                            }}
+                                            sx={{ height: "56px" }}
                                         >
                                             <MenuItem value="">Please Select</MenuItem>
                                             {categories.map((category) => (
@@ -245,6 +168,7 @@ const AddNotificationTransactions = () => {
                                     </FormControl>
                                 </Grid>
 
+                                {/* App Type */}
                                 <Grid item xs={12} md={6}>
                                     <FormControl fullWidth>
                                         <InputLabel id="app-type-label">App Type</InputLabel>
@@ -254,27 +178,39 @@ const AddNotificationTransactions = () => {
                                             value={appType}
                                             label="App Type"
                                             onChange={handleChange1}
-                                            sx={{
-                                                height: '56px',
-                                                '& .MuiOutlinedInput-notchedOutline': {
-                                                    '&:hover': {
-                                                        borderColor: 'primary.main',
-                                                    },
-                                                },
-                                            }}
+                                            sx={{ height: "56px" }}
                                         >
                                             <MenuItem value="">Please Select</MenuItem>
-                                            {appCategories.map((appType) => (
-                                                <MenuItem key={appType.id} value={appType.id}>
-                                                    {appType.app_name}
+                                            {appCategories.map((app) => (
+                                                <MenuItem key={app.id} value={app.id}>
+                                                    {app.app_name}
                                                 </MenuItem>
                                             ))}
                                         </Select>
                                     </FormControl>
                                 </Grid>
-
+                                {/* Upload Image */}
+                                <Grid item xs={12} md={6}>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                        <Button
+                                            component="label"
+                                            variant="contained"
+                                            startIcon={<CloudUploadIcon />}
+                                            sx={{ backgroundColor: "#f5f5f5", color: "text.primary" }}
+                                        >
+                                            Upload Image
+                                            <VisuallyHiddenInput type="file" onChange={handleFileChange} />
+                                        </Button>
+                                        {selectedFile && (
+                                            <Typography variant="body2" sx={{ color: "#666" }}>
+                                                Selected: {selectedFile.name}
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                </Grid>
+                                {/* Message */}
                                 <Grid item xs={12}>
-                                    <Typography variant="subtitle1" sx={{ mb: 1, color: '#666' }}>
+                                    <Typography variant="subtitle1" sx={{ mb: 1, color: "#666" }}>
                                         Message
                                     </Typography>
                                     <StyledTextarea
@@ -284,33 +220,17 @@ const AddNotificationTransactions = () => {
                                     />
                                 </Grid>
 
+                                {/* Google reCAPTCHA */}
                                 <Grid item xs={12}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                        <Button
-                                            component="label"
-                                            variant="contained"
-                                            startIcon={<CloudUploadIcon />}
-                                            sx={{
-                                                backgroundColor: '#f5f5f5',
-                                                color: 'text.primary',
-                                                '&:hover': {
-                                                    backgroundColor: '#e0e0e0',
-                                                },
-                                            }}
-                                        >
-                                            Upload Image
-                                            <VisuallyHiddenInput type="file" onChange={handleFileChange} />
-                                        </Button>
-                                        {selectedFile && (
-                                            <Typography variant="body2" sx={{ color: '#666' }}>
-                                                Selected: {selectedFile.name}
-                                            </Typography>
-                                        )}
-                                    </Box>
+                                    <ReCAPTCHA
+                                        sitekey="6LdHTbwrAAAAAGawIo2escUPr198m8cP3o_ZzZK1"
+                                        onChange={handleRecaptchaChange}
+                                    />
                                 </Grid>
 
+                                {/* Submit & Cancel */}
                                 <Grid item xs={12}>
-                                    <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 2 }}>
+                                    <Box sx={{ display: "flex", justifyContent: "flex-start", mt: 2 }}>
                                         <Button
                                             variant="contained"
                                             color="success"
@@ -319,13 +239,11 @@ const AddNotificationTransactions = () => {
                                             sx={{
                                                 px: 4,
                                                 py: 1,
-                                                borderRadius: '6px',
-                                                textTransform: 'none',
+                                                borderRadius: "6px",
+                                                textTransform: "none",
                                                 fontWeight: 600,
-                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                                                '&:hover': {
-                                                    boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
-                                                },
+                                                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                                                "&:hover": { boxShadow: "0 4px 8px rgba(0,0,0,0.15)" },
                                             }}
                                         >
                                             Submit
@@ -334,14 +252,7 @@ const AddNotificationTransactions = () => {
                                             variant="outlined"
                                             size="large"
                                             onClick={handleCancel}
-                                            sx={{
-                                                ml: 2,
-                                                px: 4,
-                                                py: 1,
-                                                borderRadius: '6px',
-                                                textTransform: 'none',
-                                                fontWeight: 600,
-                                            }}
+                                            sx={{ ml: 2, px: 4, py: 1, borderRadius: "6px", textTransform: "none", fontWeight: 600 }}
                                         >
                                             Cancel
                                         </Button>
@@ -353,6 +264,7 @@ const AddNotificationTransactions = () => {
                 </Grid>
             </Grid>
         </main>
-    )
-}
+    );
+};
+
 export default AddNotificationTransactions;

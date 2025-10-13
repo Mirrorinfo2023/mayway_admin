@@ -37,6 +37,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
+import ReCAPTCHA from "react-google-recaptcha";
 
 // Styled table cells
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -86,6 +87,7 @@ function SlabSetting() {
   const [labelOptions, setLabelOptions] = useState([]);
   const [newSlab, setNewSlab] = useState("");
   const [intervalDays, setIntervalDays] = useState(7);
+  const [captchaValue, setCaptchaValue] = useState(null);
 
   const [currentMessage, setCurrentMessage] = useState({
     id: "",
@@ -285,9 +287,7 @@ function SlabSetting() {
           Add New Slab
         </DialogTitle>
         <DialogContent dividers>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            Fill in the details below to add a new slab type.
-          </Typography>
+        
           <Divider sx={{ mb: 2 }} />
           <TextField label="Slab Name" fullWidth sx={{ mb: 2 }} />
           <TextField
@@ -304,14 +304,36 @@ function SlabSetting() {
             minRows={3}
             sx={{ mb: 2 }}
           />
+
+          {/* ✅ Google reCAPTCHA */}
+          <Box display="flex" justifyContent="center" sx={{ mt: 2 }}>
+            <ReCAPTCHA
+              sitekey="6LdHTbwrAAAAAGawIo2escUPr198m8cP3o_ZzZK1"
+              onChange={(value) => setCaptchaValue(value)}
+            />
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenAddDialog(false)}>Cancel</Button>
-          <Button variant="contained" color="primary">
+          <Button
+            variant="contained"
+            color="primary"
+            disabled={!captchaValue} // disable until verified
+            onClick={() => {
+              if (!captchaValue) {
+                alert("Please complete CAPTCHA verification");
+                return;
+              }
+              alert("Slab saved successfully ✅");
+              setOpenAddDialog(false);
+              setCaptchaValue(null);
+            }}
+          >
             Save
           </Button>
         </DialogActions>
       </DialogWrapper>
+
     </Layout>
   );
 }

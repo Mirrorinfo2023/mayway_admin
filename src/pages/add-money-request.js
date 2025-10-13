@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import api from "../../utils/api";
+import { DataEncrypt, DataDecrypt } from "../../utils/encryption";
 import withAuth from "../../utils/withAuth";
 import Layout from "@/components/Dashboard/layout";
 import AddMoneyRequestTransactions from "@/components/AddMoneyRequest/AddMoneyRequestReport";
@@ -134,20 +135,34 @@ function AddMoneyRequestReport() {
         from_date: fromDate.toISOString().split("T")[0],
         to_date: toDate.toISOString().split("T")[0],
       };
+      // console.log("🟢 reqData:", reqData);
 
       try {
-        const response = await api.post(
-          "/api/add_money/add-money-list",
-          reqData
-        );
-        if (response.data.status === 200) {
-          setShowServiceTrans(response.data.data);
-          setMasterReport(response.data.report);
+        // 🔹 Encrypt the request payload
+        const encryptedPayload = DataEncrypt(JSON.stringify(reqData));
+        // console.log("🟢 encryptedPayload:", encryptedPayload);
+
+        // 🔹 Send in the expected format
+        const response = await api.post("/api/add_money/add-money-list", {
+          data: encryptedPayload
+        });
+        // console.log("🟢 Response:", response);
+
+        if (response.data) {
+          // 🔹 Decrypt the response from backend
+          const decryptedData = DataDecrypt(response.data.data);
+          console.log("🟢 Decrypted Response:", decryptedData);
+
+          setShowServiceTrans(decryptedData.data);
+          setMasterReport(decryptedData.report);
         }
       } catch (error) {
-        console.error("Error:", error);
+        console.error("🚨 Error fetching Add Money report:", error);
       }
     };
+
+
+
 
     if (fromDate || toDate) {
       getTnx();

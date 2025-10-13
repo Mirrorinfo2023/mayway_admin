@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import api from "../../utils/api";
+import {DataEncrypt,DataDecrypt} from "../../utils/encryption";
 import withAuth from "../../utils/withAuth";
 import { callAlert } from "../../redux/actions/alert";
 import Layout from "@/components/Dashboard/layout";
@@ -136,25 +137,31 @@ function Notification(props) {
       };
 
       try {
-        const response = await api.post(
-          "api/notification/get-notification",
-          reqData
-        );
+        console.log("🟢 reqData:", reqData);
 
-        if (response.status === 200) {
-          setShowServiceTrans(response.data.notificationResult);
-          setmasterReport(response.data.report);
+        // 🔹 Encrypt request
+        const encryptedPayload = DataEncrypt(JSON.stringify(reqData));
+        console.log("🟢 encryptedPayload:", encryptedPayload);
+
+        // 🔹 Send request
+        const response = await api.post("/api/notification/get-notification", {
+          data: encryptedPayload
+        });
+        // console.log("🟢 Response:", response);
+
+        if (response.data && response.data.data) {
+          // 🔹 Decrypt response
+          const decryptedData = DataDecrypt(response.data.data);
+          console.log("🟢 Decrypted Response:", decryptedData);
+
+          setShowServiceTrans(decryptedData.notificationResult);
+          setmasterReport(decryptedData.report);
         }
       } catch (error) {
-        if (error?.response?.data?.error) {
-          dispatch(
-            callAlert({ message: error.response.data.error, type: "FAILED" })
-          );
-        } else {
-          dispatch(callAlert({ message: error.message, type: "FAILED" }));
-        }
+        console.error("🚨 Error fetching notifications:", error);
       }
     };
+
 
     if (fromDate || toDate) {
       getTnx();
