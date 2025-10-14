@@ -6,7 +6,7 @@ import api from "../../utils/api";
 import withAuth from "../../utils/withAuth";
 import { callAlert } from "../../redux/actions/alert";
 import Layout from "@/components/Dashboard/layout";
-import LeadDetailsTransactions from "@/components/leads/LeadsDetailsReport";
+import LeadDetailsTransactions from "../components/leads/LeadsDetailsReport";
 import { Grid,Paper,TableContainer ,Button} from "@mui/material";
 import dayjs from 'dayjs';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
