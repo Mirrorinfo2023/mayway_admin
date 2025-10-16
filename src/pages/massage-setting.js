@@ -30,7 +30,7 @@ import {
   Alert,
   CircularProgress,
 } from "@mui/material";
-import { DataEncrypt, DataDecrypt } from '../../utils/encryption'; // import your encryption utils
+
 import { styled } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
@@ -201,7 +201,6 @@ function MessageSetting() {
   });
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-
   const handleAddSlab = async () => {
     if (newSlab.trim() === "") {
       setError("Slab name is required");
@@ -213,44 +212,48 @@ function MessageSetting() {
     setSuccess("");
 
     try {
-      const slabPayload = {
-        name: newSlab.trim(),
-        interval_days: intervalDays,
-      };
+      console.log("Adding new slab:", { name: newSlab.trim(), interval_days: intervalDays });
 
-      // Encrypt data
-      const encryptedData = DataEncrypt(JSON.stringify(slabPayload));
-
+      // API call using fetch
       const response = await fetch(`${API_BASE}api/slab/add-slab`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: encryptedData }) // send encrypted data
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: newSlab.trim(),
+          interval_days: intervalDays,
+        }),
       });
 
+      console.log("API response status:", response.status);
+
       const responseData = await response.json();
+      console.log("API response data:", responseData);
 
       if (response.ok) {
-        // Decrypt response
-        const decryptedResponse = DataDecrypt(responseData.message);
+        console.log("Slab added successfully");
 
-        // Update template options
+        // Update template type options
         templateTypeOptions.push(newSlab.trim());
         setNewSlab("");
         setIntervalDays(7);
         setOpenSlabDialog(false);
-        setSuccess(decryptedResponse.message || "Slab type added successfully");
+        setSuccess("Slab type added successfully");
+
+        console.log("Template type options updated with new slab:", newSlab);
       } else {
-        const decryptedError = DataDecrypt(responseData.message);
-        setError(decryptedError.message || "Failed to add slab type");
+        console.error("API error:", responseData);
+        setError(responseData.message || "Failed to add slab type");
       }
     } catch (error) {
       console.error("Network error:", error);
       setError("Network error: Failed to connect to server");
     } finally {
       setLoading(false);
+      console.log("Loading state set to false");
     }
   };
-
 
   // Fetch messages on component mount
   useEffect(() => {
@@ -265,25 +268,25 @@ function MessageSetting() {
       const response = await axios.get(`${API_BASE}api/marketing/all`);
 
       if (response.data.success) {
-        // Decrypt the data from backend
-        const decryptedData = response.data.data.map(item => DataDecrypt(item.data));
-        setMessages(decryptedData);
+        setMessages(response.data.data);
       } else {
         setError("Failed to fetch messages");
       }
     } catch (error) {
       if (error.response) {
+        // Server responded with status code not in range 2xx
         setError(`Server error: ${error.response.status}`);
       } else if (error.request) {
+        // Request was made but no response received
         setError("No response from server");
       } else {
+        // Something else happened
         setError("Failed to connect to server");
       }
     } finally {
       setLoading(false);
     }
   };
-
 
   const handleSearch = (value) => setSearchTerm(value);
 
@@ -359,38 +362,26 @@ function MessageSetting() {
     }
   };
 
-
   const handleUpdate = async () => {
     setLoading(true);
     setError("");
     setSuccess("");
 
     try {
-      // Encrypt the currentMessage object
-      const encryptedMessage = DataEncrypt(JSON.stringify(currentMessage));
+      setSuccess('Message updated successfully (simulated)');
+      handleEditClose();
 
       const response = await fetch(`${API_BASE}api/marketing/update/${currentMessage.id}`, {
-        method: 'POST',
+        method: 'post',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ data: encryptedMessage }), // send under 'data' key
+        body: JSON.stringify(currentMessage),
       });
+      fetchMessages();
 
-      const responseData = await response.json();
-
-      if (response.ok) {
-        setSuccess('Message updated successfully');
-        handleEditClose();
-
-        // Decrypt updated content from backend
-        const decryptedContent = responseData.data ? DataDecrypt(responseData.data) : null;
-        fetchMessages(); // refresh list
-      } else {
-        setError(responseData.message || 'Failed to update message');
-      }
     } catch (error) {
-      setError('Network error: Failed to connect to server');
+      setError('Failed to update message');
     } finally {
       setLoading(false);
     }
@@ -401,50 +392,20 @@ function MessageSetting() {
 
     setLoading(true);
     try {
-      // Encrypt the ID as JSON string
-      const encryptedId = DataEncrypt(JSON.stringify({ id }));
+      setMessages(messages.filter((msg) => msg.id !== id));
+      setSuccess('Message deleted successfully (simulated)');
+      if (openEditDialog) handleEditClose();
 
       const response = await fetch(`${API_BASE}api/marketing/delete/${id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ data: encryptedId }),
+        method: 'post'
       });
-
-      const responseData = await response.json();
-      console.log("responseData", responseData);
-
-      // Use responseData.success instead of response.ok
-      let decryptedMessage = '';
-      if (responseData.message) {
-        try {
-          const decrypted = DataDecrypt(responseData.message);
-          // check if it's object or string
-          decryptedMessage = typeof decrypted === 'object' && decrypted.message ? decrypted.message : decrypted;
-        } catch (err) {
-          decryptedMessage = responseData.message; // fallback to raw encrypted string
-        }
-
-        console.log("decryptedMessage", decryptedMessage);
-
-        setSuccess(decryptedMessage);
-
-        // Update local state
-        setMessages(messages.filter((msg) => msg.id !== id));
-        fetchMessages();
-      } else {
-        const decryptedError = responseData.message ? DataDecrypt(responseData.message) : '';
-        setError(decryptedError || 'Failed to delete message');
-      }
+      fetchMessages();
     } catch (error) {
-      setError('Network error: Failed to connect to server');
+      setError('Failed to delete message');
     } finally {
       setLoading(false);
     }
   };
-
-
 
   const filteredMessages = messages.filter((message) => {
     const searchLower = searchTerm.toLowerCase();

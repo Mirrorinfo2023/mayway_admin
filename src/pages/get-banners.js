@@ -16,7 +16,6 @@ import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import { DataEncrypt, DataDecrypt } from "../../utils/encryption"; // Adjust import path
 
 const Item = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -116,29 +115,19 @@ function BannersReport(props) {
     useEffect(() => {
         const getCategories = async () => {
             try {
-                // 🔐 Encrypt empty payload (since GET doesn’t have body)
-                // If you’re using POST, you can include parameters.
                 const response = await api.get("/api/banner/get-banner-category");
-                console.log("✅ response:", response);
-
-                // 🔓 Decrypt backend response
-                const decrypted = DataDecrypt(response.data.data);
-                console.log("✅ Decrypted Category Response:", decrypted);
-
-                if (decrypted.status === 200) {
-                    setAppCategories(decrypted.data.notificationApp);
-                    setCategories(decrypted.data.bannersCategory);
-                } else {
-                    console.warn("⚠️ No categories found:", decrypted.message);
+                console.log("response is ", response.data.data.bannersCategory)
+                if (response.status === 200) {
+                    setAppCategories(response.data.data.notificationApp);
+                    setCategories(response.data.data.bannersCategory);
                 }
             } catch (error) {
-                console.error("❌ Error fetching categories:", error);
+                console.error("Error fetching categories:", error);
             }
         };
 
         getCategories();
     }, []);
-
     useEffect(() => {
         generateReport();
     }, []);
@@ -146,68 +135,50 @@ function BannersReport(props) {
     const generateReport = async () => {
         const reqData = {
             from_date: fromDate.toISOString().split('T')[0],
-            to_date: toDate.toISOString().split('T')[0],
+            to_date: toDate.toISOString().split('T')[0]
         };
 
-        try {
-            let catResp;
 
-            // ✅ Fetch categories if not already loaded
+
+        try {
+            // Fetch categories
+            let catResp;
             if (categories.length === 0 || appCategories.length === 0) {
                 catResp = await api.get("/api/banner/get-banner-category");
-
-                // 🔓 Decrypt category response
-                const decryptedCat = DataDecrypt(catResp.data.data);
-                console.log("✅ Decrypted Category Response:", decryptedCat);
-
-                if (decryptedCat.status === 200) {
-                    setAppCategories(decryptedCat.data.notificationApp);
-                    setCategories(decryptedCat.data.bannersCategory);
+                if (catResp.status === 200) {
+                    setAppCategories(catResp.data.data.notificationApp);
+                    setCategories(catResp.data.data.bannersCategory);
                 }
             }
+            // console.log("reqData is: ", reqData)
+            // Fetch report
+            const response = await api.post("/api/banner/get-banner-report", reqData);
+            // console.log("response is: ", response)
+            if (response.status === 200) {
+                const appList = catResp?.data?.data?.notificationApp || appCategories;
+                const catList = catResp?.data?.data?.bannersCategory || categories;
 
-            // ✅ Encrypt report request data
-            const encryptedReqData = DataEncrypt(JSON.stringify(reqData));
-
-            // ✅ Send encrypted request
-            const response = await api.post("/api/banner/get-banner-report", { data: encryptedReqData });
-
-            console.log("✅ Raw Report Response:", response);
-
-            // 🔓 Decrypt backend response
-            const decryptedResponse = DataDecrypt(response.data.data);
-            console.log("✅ Decrypted Report Response:", decryptedResponse);
-
-            if (decryptedResponse.status === 200) {
-                const appList = catResp
-                    ? decryptedCat.data.notificationApp
-                    : appCategories;
-                const catList = catResp
-                    ? decryptedCat.data.bannersCategory
-                    : categories;
-
-                const bannersWithNames = decryptedResponse.data.map((b) => {
-                    const appName = appList.find((a) => a.id === b.app_id)?.app_name || "N/A";
-                    const categoryName =
-                        catList.find((c) => c.id === b.type_id)?.category_name || "N/A";
+                const bannersWithNames = response.data.data.map(b => {
+                    const appName = appList.find(a => a.id === b.app_id)?.app_name || "N/A";
+                    const categoryName = catList.find(c => c.id === b.type_id)?.category_name || "N/A";
                     return {
                         ...b,
                         app_name: appName,
-                        category: categoryName,
+                        category: categoryName
                     };
                 });
 
                 setShowServiceTrans(bannersWithNames);
-                setReport(decryptedResponse.report);
-            } else {
-                dispatch(callAlert({ message: decryptedResponse.message, type: "FAILED" }));
+                setReport(response.data.report);
             }
         } catch (error) {
-            console.error("❌ Error generating report:", error);
-            dispatch(callAlert({ message: error.message, type: "FAILED" }));
+            if (error?.response?.data?.error) {
+                dispatch(callAlert({ message: error.response.data.error, type: 'FAILED' }))
+            } else {
+                dispatch(callAlert({ message: error.message, type: 'FAILED' }))
+            }
         }
     };
-
 
 
 

@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import Cookies from "js-cookie";
 import api from "../../utils/api";
-import { DataDecrypt, DataEncrypt } from "../../utils/encryption";
 import withAuth from "../../utils/withAuth";
 import { callAlert } from "../../redux/actions/alert";
 import Layout from "@/components/Dashboard/layout";
@@ -94,44 +93,34 @@ function TransactionHistory(props) {
     //   setPage(1);
     // }
     const getTnx = async () => {
+      const reqData = {
+        from_date: fromDate.toISOString().split("T")[0],
+        to_date: toDate.toISOString().split("T")[0],
+      };
+
+      // const originalString = 'Hello, World!';
+      // const encryptedData = DataEncrypt(JSON.stringify(originalString));
+      // console.log(encryptedData);
+      // const decryptedObject = DataDecrypt(encryptedData);
+      console.log("reqData is:", reqData);
       try {
-        // Prepare data
-        const reqData = {
-          from_date: fromDate.toISOString().split("T")[0],
-          to_date: toDate.toISOString().split("T")[0],
-        };
-
-        console.log("Original reqData:", reqData);
-
-        // 🔒 Encrypt before sending
-        const encryptedPayload = { data: DataEncrypt(JSON.stringify(reqData)) };
-
-        // 🔐 Send encrypted data
-        const response = await api.post("/api/report/user-details", encryptedPayload);
-
-        console.log("Raw Encrypted Response:", response);
-
-        // 🔓 Decrypt response message
-        const decryptedResponse = DataDecrypt(response.data.data);
-
-        console.log("Decrypted Response:", decryptedResponse);
-
+        const response = await api.post("/api/report/user-details", reqData);
+        console.log("response is: ", response)
         if (response.status === 200) {
-          setShowServiceTrans(decryptedResponse.data);
-          setTotalPageCount(decryptedResponse.totalPageCount);
-          setmasterReport(decryptedResponse.report);
+          setShowServiceTrans(response.data.data);
+          setTotalPageCount(response.data.totalPageCount);
+          setmasterReport(response.data.report);
         }
-
       } catch (error) {
-        console.error("Error fetching transaction:", error);
         if (error?.response?.data?.error) {
-          dispatch(callAlert({ message: error.response.data.error, type: "FAILED" }));
+          dispatch(
+            callAlert({ message: error.response.data.error, type: "FAILED" })
+          );
         } else {
           dispatch(callAlert({ message: error.message, type: "FAILED" }));
         }
       }
     };
-
 
     if (uid) {
       getTnx();
@@ -148,40 +137,22 @@ function TransactionHistory(props) {
 
   const handleOKButtonClick = async () => {
     setLoading(true);
-
-    // 🔹 Step 1: Prepare request data
     const requestData = {
       filter: selectedValue,
       searchTerm: searchTerm,
     };
 
     try {
-      // 🔹 Step 2: Encrypt before sending
-      const encryptedPayload = DataEncrypt(JSON.stringify(requestData));
+      const response = await api.post("/api/report/user-details", requestData);
 
-      // Send encrypted data to backend
-      const response = await api.post("/api/report/user-details", { data: encryptedPayload });
-
-      // 🔹 Step 3: Decrypt response data
-      if (response.data?.data) {
-        const decryptedResponse = DataDecrypt(response.data.data);
-
-        if (decryptedResponse.status === 200) {
-          setShowServiceTrans(decryptedResponse.data);
-        } else {
-          alert(decryptedResponse.message || "Something went wrong");
-        }
-      } else {
-        alert("Invalid response from server");
+      if (response.data.status === 200) {
+        setLoading(false);
+        setShowServiceTrans(response.data.data);
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("Something went wrong");
-    } finally {
-      setLoading(false);
     }
   };
-
   const StatCard = styled(Paper)(({ bgcolor }) => ({
     background: bgcolor,
     color: "#fff",

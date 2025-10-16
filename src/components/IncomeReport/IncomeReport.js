@@ -114,7 +114,7 @@ const StyledTablePagination = styled(TablePagination)(({ theme }) => ({
 }));
 
 // const rowsPerPageOptions = [5, 10, 25, 50];
-const rowsPerPageOptions = [5, 10, 25, 50,100,250,500,1000];
+const rowsPerPageOptions = [25, 50,100,250,500,1000,5000,10000];
 
 const IncomeTransactions = ({ showServiceTrans }) => {
   const [page, setPage] = useState(0);
