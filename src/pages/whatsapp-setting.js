@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import Cookies from "js-cookie";
 import api from "../../utils/api";
-import { DataEncrypt, DataDecrypt } from "../../utils/encryption";
 import withAuth from "../../utils/withAuth";
 import { callAlert } from "../../redux/actions/alert";
 import Layout from "@/components/Dashboard/layout";
@@ -55,42 +54,34 @@ function TransactionHistory(props) {
     marginBottom: 10,
     flexWrap: 'nowrap',
     justifyContent: 'flex-start',
-  }));
+}));
   useEffect(() => {
     const getTnx = async () => {
+      const reqData = {};
       try {
-        // 🧩 Step 1: Encrypt request payload
-        const reqData = {
-          data: DataEncrypt(JSON.stringify({
-            whatsapp_id: 0, // or pass dynamic values if any
-            instance_id: "",
-            access_token: ""
-          }))
-        };
-
-        const response = await api.post("/api/setting/get-whatsapp-setting", reqData);
-
-        // console.log("response ", response)
+        const response = await api.post(
+          "/api/setting/get-whatsapp-setting",
+          reqData
+        );
+        // console.log(response.data.data);
         if (response.status === 200) {
-          // 🧩 Step 2: Decrypt backend response
-          const decryptedMessage = DataDecrypt(response.data.data);
-          console.log("decryptedMessage ", decryptedMessage)
-          const parsedData = decryptedMessage;
-
-          setShowServiceTrans(parsedData);
+          setShowServiceTrans(response.data.data);
         }
       } catch (error) {
         if (error?.response?.data?.error) {
-          dispatch(callAlert({ message: error.response.data.error, type: "FAILED" }));
+          dispatch(
+            callAlert({ message: error.response.data.error, type: "FAILED" })
+          );
         } else {
           dispatch(callAlert({ message: error.message, type: "FAILED" }));
         }
       }
     };
 
-    if (uid) getTnx();
+    if (uid) {
+      getTnx();
+    }
   }, [uid, dispatch]);
-
 
   return (
     <Layout>

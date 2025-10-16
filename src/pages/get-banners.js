@@ -16,7 +16,6 @@ import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import { DataEncrypt, DataDecrypt } from "../../utils/encryption"; // Adjust import path
 
 const Item = styled(Paper)(({ theme }) => ({
     backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
@@ -116,29 +115,19 @@ function BannersReport(props) {
     useEffect(() => {
         const getCategories = async () => {
             try {
-                // 🔐 Encrypt empty payload (since GET doesn’t have body)
-                // If you’re using POST, you can include parameters.
                 const response = await api.get("/api/banner/get-banner-category");
-                console.log("✅ response:", response);
-
-                // 🔓 Decrypt backend response
-                const decrypted = DataDecrypt(response.data.data);
-                console.log("✅ Decrypted Category Response:", decrypted);
-
-                if (decrypted.status === 200) {
-                    setAppCategories(decrypted.data.notificationApp);
-                    setCategories(decrypted.data.bannersCategory);
-                } else {
-                    console.warn("⚠️ No categories found:", decrypted.message);
+                console.log("response is ", response.data.data.bannersCategory)
+                if (response.status === 200) {
+                    setAppCategories(response.data.data.notificationApp);
+                    setCategories(response.data.data.bannersCategory);
                 }
             } catch (error) {
-                console.error("❌ Error fetching categories:", error);
+                console.error("Error fetching categories:", error);
             }
         };
 
         getCategories();
     }, []);
-
     useEffect(() => {
         generateReport();
     }, []);
@@ -149,7 +138,10 @@ function BannersReport(props) {
             to_date: toDate.toISOString().split('T')[0],
         };
 
+
+
         try {
+            // Fetch categories
             let catResp;
 
             // ✅ Fetch categories if not already loaded
@@ -198,13 +190,14 @@ function BannersReport(props) {
                 });
 
                 setShowServiceTrans(bannersWithNames);
-                setReport(decryptedResponse.report);
-            } else {
-                dispatch(callAlert({ message: decryptedResponse.message, type: "FAILED" }));
+                setReport(response.data.report);
             }
         } catch (error) {
-            console.error("❌ Error generating report:", error);
-            dispatch(callAlert({ message: error.message, type: "FAILED" }));
+            if (error?.response?.data?.error) {
+                dispatch(callAlert({ message: error.response.data.error, type: 'FAILED' }))
+            } else {
+                dispatch(callAlert({ message: error.message, type: 'FAILED' }))
+            }
         }
     };
 

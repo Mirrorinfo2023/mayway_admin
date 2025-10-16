@@ -26,7 +26,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PendingIcon from "@mui/icons-material/Pending";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import { styled } from "@mui/material/styles";
-import { DataDecrypt, DataEncrypt } from "../../utils/encryption";
+
 const StatCard = styled(Paper)(({ bgcolor }) => ({
   background: bgcolor,
   color: "#fff",
@@ -112,36 +112,28 @@ function FeedbackReport() {
 
   useEffect(() => {
     const getTnx = async () => {
-
       const reqData = {
         from_date: fromDate.toISOString().split("T")[0],
         to_date: toDate.toISOString().split("T")[0],
       };
 
-      // 🔹 Encrypt request payload
       try {
-        // 🔹 Encrypt request payload
-        const encryptedPayload = DataEncrypt(JSON.stringify(reqData));
-
-        const response = await api.post("/api/feedback/get-feedback-report", { data: encryptedPayload });
-
-        if (response.status === 200 && response.data?.data) {
-          // 🔹 Decrypt response
-          const decryptedResp = DataDecrypt(response.data.data);
-
-          if (decryptedResp.status === 200) {
-            setShowServiceTrans(decryptedResp.data || []);
-            setMasterReport(decryptedResp.report || {});
-          } else {
-            console.log(decryptedResp.message || "Failed to fetch feedback report");
-          }
+        const response = await api.post(
+          "/api/feedback/get-feedback-report",
+          reqData
+        );
+        if (response.status === 200) {
+          setShowServiceTrans(response.data.data || []);
+          setMasterReport(response.data.report || {});
         }
       } catch (error) {
-        console.log(error?.response?.data?.error || error.message);
+        // handle error optionally
       }
     };
 
-    if (fromDate || toDate) getTnx();
+    if (fromDate || toDate) {
+      getTnx();
+    }
   }, [fromDate, toDate, dispatch]);
 
   const [selectedValue, setSelectedValue] = useState("");
