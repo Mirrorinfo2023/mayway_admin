@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import api from "../../../utils/api";
+import { DataEncrypt, DataDecrypt } from "../../../utils/encryption";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import { styled } from "@mui/material/styles";
 import * as React from "react";
@@ -148,7 +149,7 @@ const IncomeTransactions = ({ showServiceTrans }) => {
       (row.category && row.category.includes(searchTerm))
     );
   });
-  const rowsPerPageOptions = [50,100,200,500,1000];
+  const rowsPerPageOptions = [5, 10, 25, 50];
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const handleChangePage = (event, newPage) => {
@@ -239,23 +240,9 @@ const IncomeTransactions = ({ showServiceTrans }) => {
   };
 
   const handleOKButtonClick = async () => {
-    if (!UserId) {
-      console.error("UserId is missing.");
-      return;
-    }
-    let remark = "";
+    if (!UserId) return console.error("UserId is missing.");
 
-    let action = "";
-    if (status === 1) {
-      remark = "Approve";
-      action = "Approve";
-    } else if (status === 2) {
-      remark = rejectionReason;
-      action = "Reject";
-    } else {
-      remark = "";
-      action = "Pending";
-    }
+    let remark = status === 1 ? "Approve" : status === 2 ? rejectionReason : "";
 
     const requestData = {
       user_id: UserId,
@@ -263,23 +250,28 @@ const IncomeTransactions = ({ showServiceTrans }) => {
       amount: amount,
       trans_no: TransNo,
       remarks: remark,
-      status: status,
+      status: status
     };
 
     try {
-      let response = [];
+      // 🔐 Step 1: Encrypt request
+      const encryptedReq = DataEncrypt(JSON.stringify(requestData));
 
-      response = await api.post(
-        "/api/referral/plan/reject-redeem",
-        requestData
-      );
+      // 🔐 Step 2: Send encrypted request
+      const response = await api.post("/api/referral/plan/reject-redeem", { data: encryptedReq });
 
-      if (response.data.status === 200) {
-        alert(response.data.message);
-        location.reload();
-      } else {
-        alert("Failed to update status.");
-        console.log("Failed to update status.");
+      // 🔓 Step 3: Decrypt response
+      if (response.data?.data) {
+        const decryptedResp = DataDecrypt(response.data.data);
+
+        console.log("decryptedResp ", decryptedResp)
+        if (decryptedResp.status === 200) {
+          alert(decryptedResp.message);
+          location.reload();
+        } else {
+          alert("Failed to update status.");
+          console.log(decryptedResp);
+        }
       }
     } catch (error) {
       console.error("Error:", error);
@@ -288,6 +280,7 @@ const IncomeTransactions = ({ showServiceTrans }) => {
     handleCloseModal1();
     handleCloseModal2();
   };
+
 
   return (
     <main className="p-6 space-y-6">
@@ -299,7 +292,7 @@ const IncomeTransactions = ({ showServiceTrans }) => {
             sx={{
               border: "1px solid rgba(224, 224, 224, 1)",
               borderRadius: "8px",
-              overflow: "hidden"
+              overflow: "auto"
             }}
           >
             <Table
@@ -424,57 +417,101 @@ const IncomeTransactions = ({ showServiceTrans }) => {
                           ) : null}
 
                           <Modal open={openModal1} onClose={handleCloseModal1}>
-                            <Box className={styles.modalBox}>
-                              <HelpOutlineOutlinedIcon
-                                className={styles.modalIcon}
-                                color="warning"
-                              />
-                              <Typography variant="h6">
-                                Are you sure to approve the Redeem request?
-                              </Typography>
-                              <Typography>
-                                <Button
-                                  variant="contained"
-                                  size="large"
-                                  color="success"
-                                  onClick={handleOKButtonClick}
-                                  className={styles.modalOkButton}
-                                >
-                                  OK
-                                </Button>
-                              </Typography>
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)', // center on screen
+                                width: 400,
+                                bgcolor: '#ffffff', // white background
+                                p: 4,
+                                borderRadius: 3,
+                                boxShadow: 24,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: 2,
+                                textAlign: 'center',
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  bgcolor: '#e0f7fa', // light blue box for approve
+                                  p: 2,
+                                  borderRadius: 2,
+                                  width: '100%',
+                                }}
+                              >
+                                <HelpOutlineOutlinedIcon sx={{ fontSize: 50, color: '#00796b' }} />
+                                <Typography variant="h6" sx={{ mt: 1, color: '#00796b' }}>
+                                  Are you sure to approve the Redeem request?
+                                </Typography>
+                              </Box>
+
+                              <Button
+                                variant="contained"
+                                size="large"
+                                color="success"
+                                onClick={handleOKButtonClick}
+                                sx={{ mt: 2, width: '50%' }}
+                              >
+                                OK
+                              </Button>
                             </Box>
                           </Modal>
 
                           <Modal open={openModal2} onClose={handleCloseModal2}>
-                            <Box className={styles.modalBox}>
-                              <HelpOutlineOutlinedIcon
-                                className={styles.modalIcon}
-                                color="warning"
-                              />
-                              <Typography variant="h6">
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)', // center on screen
+                                width: 450,
+                                bgcolor: '#ffffff', // white background
+                                p: 4,
+                                borderRadius: 3,
+                                boxShadow: 24,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: 2,
+                                textAlign: 'center',
+                              }}
+                            >
+                              <HelpOutlineOutlinedIcon sx={{ fontSize: 50, color: '#d32f2f' }} />
+                              <Typography variant="h6" sx={{ mt: 1, color: '#d32f2f' }}>
                                 Are you sure to Reject the Redeem Request?
                               </Typography>
+
                               <TextareaAutosize
-                                minRows={10}
+                                minRows={5}
                                 placeholder="Enter Rejection Reason"
-                                style={{ width: 400 }}
+                                style={{
+                                  width: '100%',
+                                  padding: '10px',
+                                  borderRadius: '4px',
+                                  border: '1px solid #ccc',
+                                  fontSize: '16px',
+                                }}
                                 value={rejectionReason}
                                 onBlur={handleTextareaChange}
                               />
-                              <Typography>
-                                <Button
-                                  variant="contained"
-                                  size="large"
-                                  color="success"
-                                  onClick={handleOKButtonClick}
-                                  className={styles.modalOkButton}
-                                >
-                                  OK
-                                </Button>
-                              </Typography>
+
+                              <Button
+                                variant="contained"
+                                size="large"
+                                color="error"
+                                onClick={handleOKButtonClick}
+                                sx={{ mt: 2, width: '50%' }}
+                              >
+                                OK
+                              </Button>
                             </Box>
                           </Modal>
+
+
                         </Box>
                       </StyledTableCell>
                     </StyledTableRow>

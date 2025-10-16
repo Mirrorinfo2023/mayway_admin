@@ -16,7 +16,8 @@ import MailIcon from '@mui/icons-material/Mail';
 import MenuIcon from '@mui/icons-material/Menu';
 import Toolbar from '@mui/material/Toolbar';
 import CircularProgress from '@mui/material/CircularProgress';
-import AppLogo from '../../../public/mayway_logo.png'
+//import Typography from '@mui/material/Typography';
+import AppLogo from '../../../public/mirror_logo.png'
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { usePathname } from 'next/navigation';
@@ -34,6 +35,8 @@ import CampaignIcon from '@mui/icons-material/Campaign';
 import WidgetsIcon from '@mui/icons-material/Widgets';
 import { useSelector, useDispatch } from 'react-redux';
 
+
+
 const drawerWidth = 200;
 
 let menuArray = [
@@ -42,38 +45,68 @@ let menuArray = [
   { redirect: '#', name: 'Affilate', parent: 'networking', icon: <PeopleIcon sx={{ fontSize: 20 }} /> },
   { redirect: '#', name: 'Wallet', parent: 'wallet', icon: <AccountBalanceWalletIcon sx={{ fontSize: 20 }} /> },
   { redirect: '#', name: 'Marketing', parent: 'marketing', icon: <CampaignIcon sx={{ fontSize: 20 }} /> },
+  // { redirect: '#', name: 'Recharge/Payment', parent: 'recharge', icon: <PaymentIcon sx={{ fontSize: 20 }} /> },
+  // { redirect: '#', name: 'Staff', parent: 'staff', icon: <PeopleIcon sx={{ fontSize: 20 }} /> },
+  // { redirect: '#', name: 'Investment', parent: 'investment', icon: <PeopleIcon sx={{ fontSize: 20 }} /> },
+  // { redirect: '#', name: 'Settings', parent: 'setting', icon: <SettingsIcon sx={{ fontSize: 20 }} /> }
 ]
 
 let menuArray1 = [
+
   { redirect: 'get-banners', name: 'Banners', parent: 'masters' },
+  // { redirect: 'leads-category', name: 'Lead Category', parent: 'masters' },
+  // { redirect: 'leads-report', name: 'Lead List', parent: 'masters' },
+  // { redirect: 'leads-user-action-report', name: 'Leads User Action Report', parent: 'masters' },
+  // { redirect: 'leads-user-form-request-list', name: 'Leads User Form Report', parent: 'masters' },
+  // { redirect: 'leads-user-track-report', name: 'Leads User Track Report', parent: 'masters' },
+  // { redirect: 'graphics-report', name: 'Marketing Report', parent: 'masters' },
+  // { redirect: 'meeting', name: 'Meeting Report', parent: 'masters' },
   { redirect: 'get-meeting-enroll-report', name: 'Meeting Enroll Report', parent: 'masters' },
+  // { redirect: 'product-list', name: 'Product List', parent: 'masters' },
+  // { redirect: 'profit-return', name: 'Profit Return', parent: 'masters' },
   { redirect: 'massage-setting', name: 'Massage Setting', parent: 'masters' },
-  // { redirect: 'slab-setting', name: 'marketing', parent: 'masters' },
+  { redirect: 'slab-setting', name: 'marketing', parent: 'masters' },
   { redirect: 'whatsapp-setting', name: 'Whatsapp Setting', parent: 'masters' },
+
 ];
 
 let menuArray2 = [
+  // { redirect: 'royality-income', name: 'Royality Income', parent: 'networking' },
   { redirect: 'redeem-report', name: 'Redeem Report', parent: 'networking' },
   { redirect: 'income-report', name: 'Income Report', parent: 'networking' },
   { redirect: 'prime-user-report', name: 'Prime User Report', parent: 'networking' },
   { redirect: 'courses', name: 'Courses', parent: 'networking' },
   { redirect: 'profit-return', name: 'Profit Return', parent: 'networking' },
   { redirect: 'ip-management', name: 'Ip Management', parent: 'networking' },
+  
+  // { redirect: 'prime-product-list', name: 'Prime Product Report', parent: 'networking' },
+  // { redirect: 'package-purchase-list', name: 'Package Purchase Request', parent: 'networking' },
 ]
 
 let menuArray3 = [
+  // { redirect: 'user-summary', name: 'User Summary', parent: 'wallet' },
   { redirect: 'user-details', name: 'User Details', parent: 'wallet' },
   { redirect: 'otp', name: 'OTP Report', parent: 'wallet' },
   { redirect: 'kyc-report', name: 'KYC Report', parent: 'wallet' },
   { redirect: 'feedback-report', name: 'Feedback Report', parent: 'wallet' },
   { redirect: 'investment', name: 'Prime Activation', parent: 'wallet' },
   { redirect: 'add-money-request', name: 'Add Money Request', parent: 'wallet' },
+  // { redirect: 'cashback-report', name: 'Cashback Report', parent: 'wallet' },
+  // { redirect: 'prime-wallet-report', name: 'Prime Wallet Report', parent: 'wallet' },
+  // { redirect: 'epin-wallet-summary', name: 'User Epin Summary', parent: 'wallet' },
+  // { redirect: 'idcard-request', name: 'Id Card Report', parent: 'wallet' },
 ]
 
 let menuArray4 = [
   { redirect: 'fcm-notification', name: 'FCM Notification', parent: 'marketing' },
+  // { redirect: 'ebook-list', name: 'Ebook', parent: 'marketing' },
   { redirect: 'rating', name: 'Rating List', parent: 'marketing' },
   { redirect: 'zoho', name: 'Zoho Meeting', parent: 'marketing' },
+  // { redirect: 'affiliate-user-track-report', name: 'Affiliate User Track Report', parent: 'marketing' },
+  // { redirect: 'affiliate-link-category', name: 'Affiliate Link Category', parent: 'marketing' },
+  // { redirect: 'affiliate-link-list', name: 'Affiliate Link List', parent: 'marketing' },
+  // { redirect: 'upload-invoice-list', name: 'Uploaded Invoice List', parent: 'marketing' },
+  // { redirect: 'campaign-list', name: 'Campaigns', parent: 'marketing' },
 ]
 
 let menuArray5 = [
@@ -87,6 +120,24 @@ let menuArray6 = [
   { redirect: 'employee-role', name: 'Staff Role', parent: 'staff' },
   { redirect: 'employee-list', name: 'Staff', parent: 'staff' },
 ]
+
+
+let menuArray7 = [
+  // { redirect: 'system-setting', name: 'System Setting', parent: 'setting' },
+  // { redirect: 'recharge-panel', name: 'Recharge Panel', parent: 'setting' },
+  // { redirect: 'whatsapp-setting', name: 'Whatsapp Setting', parent: 'setting' },
+  // { redirect: 'pages-setting', name: 'Content', parent: 'setting' },
+  // { redirect: 'partner-transaction-history', name: 'Partner Transactions', parent: 'setting' },
+  // { redirect: 'massage-setting', name: 'Massage Setting', parent: 'setting' },
+  // { redirect: 'slab-setting', name: 'marketing', parent: 'setting' }
+]
+
+let menuArray8 = [
+  // { redirect: 'investment', name: 'Prime', parent: 'investment' },
+  // { redirect: 'employee-list', name: 'Staff', parent: 'staff' },
+]
+
+
 
 const FireNav = styled(List)({
   '& .MuiListItemButton-root': {
@@ -106,7 +157,9 @@ const RECENT_TABS_KEY = 'recentTabs';
 const RECENT_TABS_LIMIT = 5;
 
 function getMenuNameByPath(path) {
+  // Remove leading slash
   const cleanPath = path.replace(/^\//, '');
+  // Search all menu arrays
   const allMenus = [menuArray, ...Object.values({ menuArray1, menuArray2, menuArray3, menuArray4, menuArray5, menuArray6, })];
   for (const arr of allMenus) {
     const found = arr.find(item => item.redirect === cleanPath);
@@ -129,150 +182,33 @@ function normalizePath(path) {
 }
 
 function Layout(props) {
+
   const [selectedMenu, setSelectedMenu] = useState(null);
-  const { window: propWindow } = props;
+
+
+
+  const { window } = props;
   const { children } = props;
 
   const router = useRouter();
+
+
   const pathName = usePathname();
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
+
   const [anchorEl, setAnchorEl] = React.useState(null);
+
+
   const [username, setUsername] = React.useState("");
   const [currentMenu, setCurrentMenu] = useState('dashboard');
-
-  // Horizontal scroll indicator state
-  const [showHorizontalScroll, setShowHorizontalScroll] = useState(false);
-  const mainContentRef = useRef(null);
-  const scrollThumbRef = useRef(null);
-  const [isDragging, setIsDragging] = useState(false);
-
-  // Check for horizontal scroll
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const checkHorizontalScroll = () => {
-      if (mainContentRef.current) {
-        const container = mainContentRef.current;
-        const hasHorizontalScroll = container.scrollWidth > container.clientWidth;
-        setShowHorizontalScroll(hasHorizontalScroll);
-
-        // Update custom scrollbar
-        updateCustomScrollbar();
-      }
-    };
-
-    // Initial check
-    checkHorizontalScroll();
-
-    window.addEventListener('resize', checkHorizontalScroll);
-
-    const observer = new MutationObserver(checkHorizontalScroll);
-    if (mainContentRef.current) {
-      observer.observe(mainContentRef.current, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        characterData: true
-      });
-    }
-
-    return () => {
-      window.removeEventListener('resize', checkHorizontalScroll);
-      observer.disconnect();
-    };
-  }, []);
-
-  // Update custom scrollbar
-  const updateCustomScrollbar = () => {
-    if (mainContentRef.current && scrollThumbRef.current) {
-      const container = mainContentRef.current;
-      const scrollableWidth = container.scrollWidth - container.clientWidth;
-
-      if (scrollableWidth > 0) {
-        const thumbWidth = Math.max((container.clientWidth / container.scrollWidth) * 100, 10);
-        const scrollLeft = container.scrollLeft;
-        const thumbPosition = (scrollLeft / scrollableWidth) * (100 - thumbWidth);
-
-        scrollThumbRef.current.style.width = `${thumbWidth}%`;
-        scrollThumbRef.current.style.transform = `translateX(${thumbPosition}%)`;
-        scrollThumbRef.current.style.display = 'block';
-      } else {
-        scrollThumbRef.current.style.display = 'none';
-      }
-    }
-  };
-
-  // Handle scroll for custom scrollbar
-  const handleScroll = (e) => {
-    updateCustomScrollbar();
-  };
-
-  // Handle mouse down on custom scrollbar
-  const handleScrollbarMouseDown = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-
-    if (mainContentRef.current && scrollThumbRef.current) {
-      const container = mainContentRef.current;
-      const scrollbar = scrollThumbRef.current.parentElement;
-      const scrollbarRect = scrollbar.getBoundingClientRect();
-
-      const clickX = e.clientX - scrollbarRect.left;
-      const scrollbarWidth = scrollbarRect.width;
-      const thumbWidth = scrollThumbRef.current.offsetWidth;
-
-      // Calculate new scroll position
-      const scrollableWidth = container.scrollWidth - container.clientWidth;
-      const newScrollLeft = (clickX / scrollbarWidth) * container.scrollWidth;
-
-      container.scrollLeft = newScrollLeft;
-      updateCustomScrollbar();
-    }
-  };
-
-  // Handle mouse move for dragging
-  const handleMouseMove = (e) => {
-    if (isDragging && mainContentRef.current) {
-      const container = mainContentRef.current;
-      const scrollbar = scrollThumbRef.current.parentElement;
-      const scrollbarRect = scrollbar.getBoundingClientRect();
-
-      const mouseX = e.clientX - scrollbarRect.left;
-      const scrollbarWidth = scrollbarRect.width;
-
-      // Calculate new scroll position
-      const scrollableWidth = container.scrollWidth - container.clientWidth;
-      const newScrollLeft = (mouseX / scrollbarWidth) * container.scrollWidth;
-
-      container.scrollLeft = Math.max(0, Math.min(newScrollLeft, scrollableWidth));
-      updateCustomScrollbar();
-    }
-  };
-
-  // Handle mouse up
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  // Add event listeners for dragging
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging]);
 
   const handleFirstMenuClick = (menuIndex, parent) => {
     setSelectedMenu(menuIndex);
     setCurrentMenu(parent);
     localStorage.setItem('currentMenu', parent);
   };
+
 
   useEffect(() => {
     const currentPath = pathName;
@@ -281,6 +217,7 @@ function Layout(props) {
       return menuArray.some(item => currentPath.startsWith(`/${item.redirect}`));
     };
 
+    // Check each submenu array and set the corresponding parent menu as active
     if (checkPathInMenuArray(menuArray1)) {
       setSelectedMenu(1);
       setCurrentMenu('masters');
@@ -299,7 +236,12 @@ function Layout(props) {
     } else if (checkPathInMenuArray(menuArray6)) {
       setSelectedMenu(6);
       setCurrentMenu('staff');
-    } else {
+    }
+    // else if (checkPathInMenuArray(menuArray7)) {
+    //   setSelectedMenu(7);
+    //   setCurrentMenu('setting');
+    // }
+    else {
       setSelectedMenu(0);
     }
   }, [pathName]);
@@ -316,16 +258,67 @@ function Layout(props) {
     setAnchorEl(null);
   };
 
+
   const handleLogout = () => {
     setAnchorEl(null);
     Cookies.remove('department');
     Cookies.remove('uid');
+
     let role = Cookies.get('role');
+
+
     Cookies.remove('role');
 
     if (role === "user") {
       router.push('/login')
+
     }
+  };
+
+
+  const renderMenu = (menuArray) => {
+    return (
+      <div style={{}}>
+        <List>
+          {menuArray && menuArray.map((item, index) => (
+            <ListItem datatype={item.parent}
+              key={item.redirect}
+              disablePadding
+              style={{ display: 'inline-block', width: 'auto' }}
+              sx={{
+                borderBottom: currentMenu.startsWith(item.parent) ? '3px solid #1976d2' : '0px solid #FFFFFF',
+              }}
+
+              className={
+                pathName.startsWith("/" + item.redirect)
+                  ? "text-[#1976d2]   bg-white"
+                  : "text-slate-700"
+              }
+              onClick={() => {
+                if (item.redirect !== '#' || index === 0) {
+                  router.push(`/${item.redirect}`);
+                } else {
+                  handleFirstMenuClick(index, item.parent);
+                }
+              }}
+            >
+              <ListItemButton>
+                <ListItemText
+                  sx={{
+                    transition: 'color 0.3s',
+                    '&:hover': {
+                      color: "#1976d2",
+                    },
+                  }}
+                  primaryTypographyProps={{ fontSize: '14px' }}
+                  primary={item.name}
+                />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </div>
+    );
   };
 
   const [loading, setLoading] = useState(false);
@@ -342,6 +335,57 @@ function Layout(props) {
     }
   };
 
+
+
+  const subMenu = (menuArray) => {
+    return (
+      <div style={{}}>
+        <List>
+          {menuArray && menuArray.map((item, index) => (
+            <ListItem
+              key={item.redirect}
+              disablePadding
+              style={{ display: 'inline-block', width: 'auto', mx: 1, my: 0.5, borderRadius: 2, background: pathName.startsWith("/" + item.redirect) ? '#e3f2fd' : 'transparent', boxShadow: pathName.startsWith("/" + item.redirect) ? '0 2px 8px rgba(25, 118, 210, 0.08)' : 'none', borderBottom: pathName.startsWith("/" + item.redirect) ? '3px solid #1976d2' : '0px solid #FFFFFF', transition: 'all 0.2s', '&:hover': { background: '#f5faff', color: '#1976d2', }, }}
+              className={
+                pathName.startsWith("/" + item.redirect)
+                  ? "text-[#1976d2]   bg-white"
+                  : "text-slate-700"
+              }
+              onClick={() => {
+                if (item.redirect !== '#' || index === 0) {
+                  router.push(`/${item.redirect}`);
+                } else {
+                  handleFirstMenuClick(index, item.parent);
+                }
+              }}
+            >
+              <ListItemButton
+                sx={{
+                  borderRadius: 2,
+                  px: 2,
+                  py: 0.5,
+                  minWidth: 120,
+                  color: pathName.startsWith("/" + item.redirect) ? '#1976d2' : '#333',
+                  fontWeight: pathName.startsWith("/" + item.redirect) ? 600 : 400,
+                  transition: 'color 0.2s, background 0.2s',
+                  '&:hover': {
+                    color: '#1976d2',
+                    background: '#e3f2fd',
+                  },
+                }}
+              >
+                <ListItemText
+                  primaryTypographyProps={{ fontSize: '15px', fontWeight: pathName.startsWith("/" + item.redirect) ? 600 : 400 }}
+                  primary={item.name}
+                />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </div>
+    );
+  };
+
   // Dropdown menu state
   const [navAnchor, setNavAnchor] = useState(null);
   const [navAnchorIdx, setNavAnchorIdx] = useState(null);
@@ -354,7 +398,6 @@ function Layout(props) {
     setNavAnchorIdx(idx);
     setNavMenuOpen(true);
   };
-
   const handleNavMenuClose = () => {
     navMenuCloseTimeout.current = setTimeout(() => {
       setNavMenuOpen(false);
@@ -362,7 +405,6 @@ function Layout(props) {
       setNavAnchorIdx(null);
     }, 120);
   };
-
   const handleNavMenuImmediateClose = () => {
     clearTimeout(navMenuCloseTimeout.current);
     setNavMenuOpen(false);
@@ -378,6 +420,8 @@ function Layout(props) {
     marketing: menuArray4,
     recharge: menuArray5,
     staff: menuArray6,
+    // investment: menuArray8,
+    // setting: menuArray7,
   };
 
   // New renderMenu for dropdowns
@@ -489,20 +533,24 @@ function Layout(props) {
 
   // RECENT TABS STATE
   const [recentTabs, setRecentTabs] = useState([]);
-
+  // On mount, load recentTabs from localStorage (persistent history)
   useEffect(() => {
     let tabs = JSON.parse(localStorage.getItem(RECENT_TABS_KEY) || '[]');
+    // Filter out tabs that are not workflow tabs
     tabs = tabs.filter(tab => isWorkflowTab(tab.path));
     setRecentTabs(tabs);
   }, []);
-
+  // On route change, update recentTabs
   useEffect(() => {
     if (!pathName) return;
     const normPath = normalizePath(pathName);
     if (!isWorkflowTab(normPath)) return;
     let tabs = JSON.parse(localStorage.getItem(RECENT_TABS_KEY) || '[]');
+    // Remove if already exists (normalize for comparison)
     tabs = tabs.filter(tab => normalizePath(tab.path) !== normPath);
+    // Add to front
     tabs.unshift({ path: normPath, name: getMenuNameByPath(normPath) });
+    // Limit
     tabs = tabs.slice(0, RECENT_TABS_LIMIT);
     localStorage.setItem(RECENT_TABS_KEY, JSON.stringify(tabs));
     setRecentTabs(tabs);
@@ -528,7 +576,6 @@ function Layout(props) {
           <CircularProgress sx={{ color: '#fff' }} />
         </Box>
       )}
-
       {/* First Row: Header */}
       <Box sx={{
         width: '100%',
@@ -544,32 +591,12 @@ function Layout(props) {
         top: 0,
         zIndex: 1200,
       }}>
-       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-  <Image 
-    src={AppLogo} 
-    height={28} 
-    width={60} 
-    alt="Logo" 
-    style={{ 
-      objectFit: 'contain', 
-      borderRadius: 6, 
-      background: '#fff', 
-      padding: 1 
-    }} 
-  />          
-  <Typography 
-    variant="h6" 
-    sx={{ 
-      fontWeight: 700, 
-      fontSize: { xs: '0.9rem', sm: '1.1rem' }, 
-      letterSpacing: 0.8, 
-      ml: 0.5, 
-      color: '#fff' 
-    }}
-  >
-    MAYWAY <span style={{ color: '#FFD700' }}>BUSINESS</span>
-  </Typography>
-</Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Image src={AppLogo} height={60} width={150} alt="Logo" style={{ objectFit: 'contain', borderRadius: 8, background: '#fff', padding: 2 }} />
+          <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: '1.1rem', sm: '1.3rem' }, letterSpacing: 1, ml: 1, color: '#fff' }}>
+            MIRROR<span style={{ color: '#ffe082' }}>HUB</span>
+          </Typography>
+        </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Button
             variant="contained"
@@ -614,33 +641,6 @@ function Layout(props) {
           </Menu>
         </Box>
       </Box>
-
-      {/* Horizontal Scroll Indicator - TOP में */}
-      {showHorizontalScroll && (
-        <Box sx={{
-          width: '100%',
-          height: '4px',
-          backgroundColor: '#e0e0e0',
-          position: 'sticky',
-          top: 56,
-          left: 0,
-          zIndex: 1199,
-          overflow: 'hidden'
-        }}>
-          <Box sx={{
-            width: '100%',
-            height: '100%',
-            backgroundColor: '#2198F3',
-            animation: 'scrollIndicator 2s infinite ease-in-out',
-            '@keyframes scrollIndicator': {
-              '0%': { transform: 'translateX(-100%)' },
-              '50%': { transform: 'translateX(100%)' },
-              '100%': { transform: 'translateX(-100%)' }
-            }
-          }} />
-        </Box>
-      )}
-
       {/* Second Row: Navigation */}
       <Box sx={{
         width: '100%',
@@ -653,7 +653,7 @@ function Layout(props) {
         minHeight: 48,
         zIndex: 1100,
         position: 'sticky',
-        top: showHorizontalScroll ? 60 : 56,
+        top: 60,
         overflowX: 'auto',
         '&::-webkit-scrollbar': {
           height: '6px',
@@ -680,7 +680,6 @@ function Layout(props) {
           {renderMenuDropdown(menuArray)}
         </Box>
       </Box>
-
       {/* Recently Opened Tabs UI */}
       {recentTabs.length > 0 && (
         <Box sx={{
@@ -735,92 +734,53 @@ function Layout(props) {
           ))}
         </Box>
       )}
-
-      {/* Main Content Area with WORKING TOP SCROLLBAR */}
-      <Box sx={{
-        position: 'relative',
-        width: '100%',
-        mt: 2
-      }}>
-        {/* Custom Top Scrollbar - NOW CLICKABLE */}
-        <Box
-          sx={{
+      <Box
+        sx={{
+          width: '100%',
+          minHeight: '100vh',
+          backgroundColor: '#f2f5f9',
+          margin: 0,
+          padding: 0,
+          borderRadius: 5,
+          boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
+          mt: 2,
+        }}
+      >
+        <main style={{ marginBottom: "50px" }} className="flex-none transition-all">{children}</main>
+        {/* <div className="footer" style={{
+          justifyContent: 'center',
+          background: 'linear-gradient(90deg, #1976d2 0%, #42a5f5 100%)',
+          position: 'fixed',
+          bottom: '0',
+          left: '0',
+          width: '100%',
+          borderTopLeftRadius: '18px',
+          borderTopRightRadius: '18px',
+          boxShadow: '0 -2px 16px rgba(25, 118, 210, 0.10)',
+          zIndex: 1200,
+        }}>
+          <p style={{
+            textAlign: 'center',
+            padding: '12px',
+            display: 'inline-block',
             width: '100%',
-            height: '12px',
-            backgroundColor: '#f1f1f1',
-            borderRadius: '4px 4px 0 0',
-            position: 'sticky',
-            top: showHorizontalScroll ? 104 : 100,
-            zIndex: 100,
-            mb: 0,
-            overflow: 'hidden',
-            cursor: 'pointer',
-            '&:hover': {
-              backgroundColor: '#e8e8e8',
-            }
-          }}
-          onMouseDown={handleScrollbarMouseDown}
-        >
-          <Box
-            ref={scrollThumbRef}
-            sx={{
-              height: '100%',
-              backgroundColor: '#2198F3',
-              borderRadius: '4px',
-              width: '0%',
-              transition: 'all 0.1s ease',
-              cursor: 'grab',
-              '&:hover': {
-                backgroundColor: '#1976d2',
-              },
-              '&:active': {
-                cursor: 'grabbing',
-              }
-            }}
-          />
-        </Box>
-
-        {/* Main Content - KEEP NATIVE SCROLLBAR FOR NOW */}
-        <Box
-          ref={mainContentRef}
-          onScroll={handleScroll}
-          sx={{
-            width: '100%',
-            minHeight: '100vh',
-            backgroundColor: '#f2f5f9',
+            boxSizing: 'border-box',
+            color: '#fff',
+            fontWeight: 500,
+            fontSize: '14px',
+            letterSpacing: '0.5px',
             margin: 0,
-            padding: 0,
-            borderRadius: '0 0 5px 5px',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
-            overflowX: 'auto',
-            // Native scrollbar को visible रखें temporary के लिए
-            '&::-webkit-scrollbar': {
-              height: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              background: '#f1f1f1',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              background: '#2198F3',
-              borderRadius: '4px',
-            },
-          }}
-        >
-          <main style={{
-            marginBottom: "50px",
-            minWidth: 'fit-content',
-            padding: '16px'
-          }} className="flex-none transition-all">
-            {children}
-          </main>
-        </Box>
+            textShadow: '0 1px 4px rgba(0,0,0,0.10)'
+          }}>
+            <span style={{ verticalAlign: 'middle', marginRight: 6, fontSize: '18px' }}>💡</span>
+            Software designed & developed By Mirrorinfo Tech Pvt Ltd
+          </p>
+        </div> */}
       </Box>
     </Box>
   );
 }
 
-Layout.propTypes = {
-  window: PropTypes.func,
-};
+
 
 export default Layout;

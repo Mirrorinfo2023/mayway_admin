@@ -143,6 +143,7 @@ function UploadKyc({ open, onClose }) {
             console.log("KYC Upload Response:", res.data);
             alert("KYC uploaded successfully");
 
+            // ✅ Reset form and stepper after success
             setFormData({
 
                 aadhaarNo: "",

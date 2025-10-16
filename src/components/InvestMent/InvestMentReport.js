@@ -300,7 +300,7 @@ const InvestMentTransactions = ({ showServiceTrans }) => {
                     </ThemedTableContainer>
 
                     <StyledTablePagination
-                        rowsPerPageOptions={[25, 50, 100, 250, 500, 1000]}
+                        rowsPerPageOptions={[5, 10, 25, 50]}
                         component="div"
                         count={rows.length}
                         rowsPerPage={rowsPerPage}

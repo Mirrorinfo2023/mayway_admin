@@ -12,6 +12,7 @@ import {
   Divider,
 } from "@mui/material";
 import API from "../../../utils/api";
+import { DataEncrypt, DataDecrypt } from '../../../utils/encryption';
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -112,17 +113,33 @@ export default function Dashboard() {
     const fetchDashboardData = async () => {
       try {
         const res = await API.get("/api/admin/dashboardData");
-        if (res.data.success) setData(res.data);
+
+        // --- Decrypt response ---
+        const decrypted = DataDecrypt(res.data.data);
+        console.log("✅ Decrypted Dashboard Data:", decrypted);
+
+        if (decrypted.success) {
+          setData(decrypted);
+        } else {
+          console.error("Failed to fetch dashboard data:", decrypted.message);
+        }
+
       } catch (err) {
-        console.error(err);
+        console.error("Dashboard fetch error:", err);
       }
     };
+
     fetchDashboardData();
   }, []);
+
 
   useEffect(() => {
     const fetchPrimeData = async () => {
       try {
+        // If you want to send encrypted POST request:
+        // const encryptedReq = DataEncrypt(JSON.stringify({ offset: 0, limit: 50, useCache: true }));
+
+        // Fetch report
         const res = await API.get("/api/admin/profitreturnreport");
 
         // --- Decrypt response ---
@@ -133,26 +150,28 @@ export default function Dashboard() {
           setData(prev => ({
             ...prev,
             profitReturn: {
-              report: res.data.report || [],
-              topEarners: res.data.topEarners || [],
+              report: decrypted.report || [],
+              topEarners: decrypted.topEarners || [],
             },
           }));
 
-          // Optionally, save summary stats if needed
           const summary = {
-            today_earning: res.data.report?.reduce((sum, r) => sum + (r.today_earning || 0), 0),
-            this_month_return: res.data.report?.reduce((sum, r) => sum + (r.this_month_return || 0), 0),
-            total_return: res.data.report?.reduce((sum, r) => sum + (r.total_return || 0), 0),
+            today_earning: decrypted.report?.reduce((sum, r) => sum + (r.today_earning || 0), 0),
+            this_month_return: decrypted.report?.reduce((sum, r) => sum + (r.this_month_return || 0), 0),
+            total_return: decrypted.report?.reduce((sum, r) => sum + (r.total_return || 0), 0),
           };
           setPrimeStats(summary);
-          setPrimeRows(res.data.report || []);
+          setPrimeRows(decrypted.report || []);
         }
+
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching Profit Return Report:", err);
       }
     };
+
     fetchPrimeData();
   }, []);
+
 
 
   // ✅ User Chart
