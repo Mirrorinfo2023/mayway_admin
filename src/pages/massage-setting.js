@@ -29,15 +29,19 @@ import {
   InputAdornment,
   Alert,
   CircularProgress,
+  Chip,
 } from "@mui/material";
-import { DataEncrypt, DataDecrypt } from '../../utils/encryption'; // import your encryption utils
+import { DataEncrypt, DataDecrypt } from '../../utils/encryption';
 import { styled } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import ClearIcon from "@mui/icons-material/Clear";
 import axios from "axios";
+
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
     backgroundColor: theme.palette.primary.main,
@@ -112,6 +116,9 @@ const templateTypeOptions = [
   "slab13",
 ];
 
+// Message types
+const messageTypes = ["email", "whatsapp", "sms"];
+
 // Template variables mapping based on template type
 const templateVariablesByType = {
   register: ["first_name", "last_name", "mobile"],
@@ -138,7 +145,6 @@ const templateVariablesByType = {
   admin_incomecredit: ["first_name", "last_name", "amount", "wallet_type"],
   id_autoblock: ["first_name", "last_name"],
   prime_purchase: ["name", "plan_name"],
-  // Default variables for any template type
   default: [
     "first_name",
     "last_name",
@@ -180,6 +186,8 @@ const fillTemplate = (template, values) => {
 function MessageSetting() {
   const [messages, setMessages] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterTemplateType, setFilterTemplateType] = useState("");
   const [openViewDialog, setOpenViewDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openAddDialog, setOpenAddDialog] = useState(false);
@@ -201,7 +209,6 @@ function MessageSetting() {
   });
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-
   const handleAddSlab = async () => {
     if (newSlab.trim() === "") {
       setError("Slab name is required");
@@ -218,22 +225,18 @@ function MessageSetting() {
         interval_days: intervalDays,
       };
 
-      // Encrypt data
       const encryptedData = DataEncrypt(JSON.stringify(slabPayload));
 
       const response = await fetch(`${API_BASE}api/slab/add-slab`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: encryptedData }) // send encrypted data
+        body: JSON.stringify({ data: encryptedData })
       });
 
       const responseData = await response.json();
 
       if (response.ok) {
-        // Decrypt response
         const decryptedResponse = DataDecrypt(responseData.message);
-
-        // Update template options
         templateTypeOptions.push(newSlab.trim());
         setNewSlab("");
         setIntervalDays(7);
@@ -251,12 +254,10 @@ function MessageSetting() {
     }
   };
 
-
   // Fetch messages on component mount
   useEffect(() => {
     fetchMessages();
   }, []);
-
 
   const fetchMessages = async () => {
     setLoading(true);
@@ -265,7 +266,6 @@ function MessageSetting() {
       const response = await axios.get(`${API_BASE}api/marketing/all`);
 
       if (response.data.success) {
-        // Decrypt the data from backend
         const decryptedData = response.data.data.map(item => DataDecrypt(item.data));
         setMessages(decryptedData);
       } else {
@@ -284,8 +284,18 @@ function MessageSetting() {
     }
   };
 
-
   const handleSearch = (value) => setSearchTerm(value);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchTerm("");
+    setFilterType("");
+    setFilterTemplateType("");
+  };
+
+  // Get unique types and template types for filters
+  const uniqueTypes = [...new Set(messages.map(msg => msg.type))];
+  const uniqueTemplateTypes = [...new Set(messages.map(msg => msg.templateType))];
 
   const handleViewOpen = (message) => {
     setSelectedMessage(message);
@@ -346,7 +356,6 @@ function MessageSetting() {
 
       if (data.success) {
         setSuccess('Message created successfully');
-        // Refresh the messages list
         fetchMessages();
         handleAddClose();
       } else {
@@ -359,14 +368,12 @@ function MessageSetting() {
     }
   };
 
-
   const handleUpdate = async () => {
     setLoading(true);
     setError("");
     setSuccess("");
 
     try {
-      // Encrypt the currentMessage object
       const encryptedMessage = DataEncrypt(JSON.stringify(currentMessage));
 
       const response = await fetch(`${API_BASE}api/marketing/update/${currentMessage.id}`, {
@@ -374,7 +381,7 @@ function MessageSetting() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ data: encryptedMessage }), // send under 'data' key
+        body: JSON.stringify({ data: encryptedMessage }),
       });
 
       const responseData = await response.json();
@@ -382,10 +389,7 @@ function MessageSetting() {
       if (response.ok) {
         setSuccess('Message updated successfully');
         handleEditClose();
-
-        // Decrypt updated content from backend
-        const decryptedContent = responseData.data ? DataDecrypt(responseData.data) : null;
-        fetchMessages(); // refresh list
+        fetchMessages();
       } else {
         setError(responseData.message || 'Failed to update message');
       }
@@ -401,7 +405,6 @@ function MessageSetting() {
 
     setLoading(true);
     try {
-      // Encrypt the ID as JSON string
       const encryptedId = DataEncrypt(JSON.stringify({ id }));
 
       const response = await fetch(`${API_BASE}api/marketing/delete/${id}`, {
@@ -413,24 +416,17 @@ function MessageSetting() {
       });
 
       const responseData = await response.json();
-      console.log("responseData", responseData);
-
-      // Use responseData.success instead of response.ok
+      
       let decryptedMessage = '';
       if (responseData.message) {
         try {
           const decrypted = DataDecrypt(responseData.message);
-          // check if it's object or string
           decryptedMessage = typeof decrypted === 'object' && decrypted.message ? decrypted.message : decrypted;
         } catch (err) {
-          decryptedMessage = responseData.message; // fallback to raw encrypted string
+          decryptedMessage = responseData.message;
         }
 
-        console.log("decryptedMessage", decryptedMessage);
-
         setSuccess(decryptedMessage);
-
-        // Update local state
         setMessages(messages.filter((msg) => msg.id !== id));
         fetchMessages();
       } else {
@@ -444,18 +440,21 @@ function MessageSetting() {
     }
   };
 
-
-
+  // Enhanced filtering function
   const filteredMessages = messages.filter((message) => {
     const searchLower = searchTerm.toLowerCase();
-    const contentToSearch = `${message.title} ${message.body}`.toLowerCase();
+    const contentToSearch = `${message.title} ${message.body} ${message.type} ${message.templateType}`.toLowerCase();
 
-    const matchesNormal = contentToSearch.includes(searchLower);
-    const matchesTemplate = availableVariables.some((keyword) =>
-      contentToSearch.includes(`\${${keyword}}`)
-    );
+    // Text search
+    const matchesSearch = searchTerm === "" || contentToSearch.includes(searchLower);
+    
+    // Type filter
+    const matchesType = filterType === "" || message.type === filterType;
+    
+    // Template type filter
+    const matchesTemplateType = filterTemplateType === "" || message.templateType === filterTemplateType;
 
-    return matchesNormal || (searchTerm && matchesTemplate);
+    return matchesSearch && matchesType && matchesTemplateType;
   });
 
   const insertTemplateVariable = (variable) => {
@@ -464,6 +463,9 @@ function MessageSetting() {
       body: currentMessage.body + `\${${variable}}`
     });
   };
+
+  // Check if any filter is active
+  const isFilterActive = searchTerm || filterType || filterTemplateType;
 
   return (
     <Layout>
@@ -490,20 +492,6 @@ function MessageSetting() {
                 Message Settings
               </Typography>
               <Box display="flex" alignItems="center" gap={2}>
-                <TextField
-                  variant="outlined"
-                  size="small"
-                  placeholder="Search messages..."
-                  value={searchTerm}
-                  onChange={(e) => handleSearch(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon color="action" />
-                      </InputAdornment>
-                    )
-                  }}
-                />
                 <Button
                   variant="contained"
                   color="primary"
@@ -513,6 +501,87 @@ function MessageSetting() {
                   Add New Message
                 </Button>
               </Box>
+            </Box>
+
+            {/* Filters Section */}
+            <Box p={2} sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.default' }}>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} sm={6} md={3}>
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    size="small"
+                    placeholder="Search messages..."
+                    value={searchTerm}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon color="action" />
+                        </InputAdornment>
+                      )
+                    }}
+                  />
+                </Grid>
+                
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Filter by Type</InputLabel>
+                    <Select
+                      value={filterType}
+                      label="Filter by Type"
+                      onChange={(e) => setFilterType(e.target.value)}
+                    >
+                      <MenuItem value="">All Types</MenuItem>
+                      {uniqueTypes.map((type) => (
+                        <MenuItem key={type} value={type}>
+                          {type}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={3}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Filter by Template</InputLabel>
+                    <Select
+                      value={filterTemplateType}
+                      label="Filter by Template"
+                      onChange={(e) => setFilterTemplateType(e.target.value)}
+                    >
+                      <MenuItem value="">All Templates</MenuItem>
+                      {uniqueTemplateTypes.map((templateType) => (
+                        <MenuItem key={templateType} value={templateType}>
+                          {templateType}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={6} md={3}>
+                  <Box display="flex" gap={1} alignItems="center">
+                    <Button
+                      variant="outlined"
+                      startIcon={<FilterListIcon />}
+                      disabled={!isFilterActive}
+                      onClick={clearFilters}
+                      sx={{ flex: 1 }}
+                    >
+                      Clear Filters
+                    </Button>
+                    {isFilterActive && (
+                      <Chip 
+                        label={`${filteredMessages.length} results`}
+                        color="primary" 
+                        variant="outlined"
+                        size="small"
+                      />
+                    )}
+                  </Box>
+                </Grid>
+              </Grid>
             </Box>
 
             {loading ? (
@@ -544,8 +613,20 @@ function MessageSetting() {
                       <StyledTableRow key={message.id}>
                         <StyledTableCell>{index + 1}</StyledTableCell>
                         <StyledTableCell>{message.title}</StyledTableCell>
-                        <StyledTableCell>{message.type}</StyledTableCell>
-                        <StyledTableCell>{message.templateType}</StyledTableCell>
+                        <StyledTableCell>
+                          <Chip 
+                            label={message.type} 
+                            color={message.type === 'email' ? 'primary' : message.type === 'whatsapp' ? 'success' : 'secondary'}
+                            size="small"
+                          />
+                        </StyledTableCell>
+                        <StyledTableCell>
+                          <Chip 
+                            label={message.templateType} 
+                            variant="outlined"
+                            size="small"
+                          />
+                        </StyledTableCell>
                         <StyledTableCell>
                           {message.body && message.body.length > 50
                             ? `${message.body.substring(0, 50)}...`
@@ -724,8 +805,9 @@ function MessageSetting() {
                   value={currentMessage.type || ""}
                   onChange={(e) => setCurrentMessage({ ...currentMessage, type: e.target.value })}
                 >
-                  <MenuItem value="email">Email</MenuItem>
-                  <MenuItem value="whatsapp">WhatsApp</MenuItem>
+                  {messageTypes.map((type) => (
+                    <MenuItem key={type} value={type}>{type}</MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Grid>

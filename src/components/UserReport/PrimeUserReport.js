@@ -51,7 +51,7 @@ const PrimeUserTransactions = ({ showServiceTrans }) => {
     rows = [];
   }
 
-  const rowsPerPageOptions = [5, 10, 25, 50];
+  const rowsPerPageOptions = [ 25, 50,100,250,500];
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const handleChangePage = (event, newPage) => {
