@@ -10,13 +10,13 @@ import { callAlert } from "../../redux/actions/alert";
 import Layout from "@/components/Dashboard/layout";
 import MeetingDetailsTransactions from "@/components/Meeting/MeetingDetailsReport";
 
-import { Grid,Button, styled, Paper, Typography, Divider, Box, TextField, Select, MenuItem, FormControl,InputLabel } from "@mui/material";
+import { Grid, Button, styled, Paper, Typography, Divider, Box, TextField, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
 import dayjs from 'dayjs';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import SearchIcon from '@mui/icons-material/Search';
-
+import { DataEncrypt, DataDecrypt } from "../../utils/encryption"; // adjust path as needed
 
 
 const getDate = (timeZone) => {
@@ -50,7 +50,7 @@ function MeetingDetailsReport(props) {
     const handleSearch = (text) => {
         setSearchTerm(text);
         if (showServiceTrans && showServiceTrans.length > 0) {
-            const filtered = showServiceTrans.filter(item => 
+            const filtered = showServiceTrans.filter(item =>
                 item.name?.toLowerCase().includes(text.toLowerCase()) ||
                 item.description?.toLowerCase().includes(text.toLowerCase()) ||
                 item.first_name?.toLowerCase().includes(text.toLowerCase()) ||
@@ -91,67 +91,83 @@ function MeetingDetailsReport(props) {
     const currentDate = new Date();
     const [fromDate, setFromDate] = React.useState(dayjs(new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)));
     const [toDate, setToDate] = React.useState(dayjs(getDate.date));
-    
+
+
     useEffect(() => {
         const getTnx = async () => {
             const reqData = {
-                from_date: fromDate.toISOString().split('T')[0],
-                to_date: toDate.toISOString().split('T')[0],
-            }
+                from_date: fromDate.toISOString().split("T")[0],
+                to_date: toDate.toISOString().split("T")[0],
+            };
 
             try {
+                // 🔒 Encrypt before sending
+                const encryptedData = DataEncrypt(JSON.stringify(reqData));
+                console.log("🔒 Sending Encrypted Data:", encryptedData);
 
-                const response = await api.post("/api/meeting/meeting-user-enrollment-details", reqData);
+                const response = await api.post(
+                    "/api/meeting/meeting-user-enrollment-details",
+                    { data: encryptedData }
+                );
 
-                if (response.status === 200) {
-                    setShowServiceTrans(response.data.data)
-                }
+                // console.log("✅ Raw Response:", response.data);
 
-            } catch (error) {
+                // 🔓 Decrypt response from backend
+                const decrypted = DataDecrypt(response.data.data);
+                console.log("✅ Decrypted Response:", decrypted);
 
-                if (error?.response?.data?.error) {
-                    dispatch(callAlert({ message: error.response.data.error, type: 'FAILED' }))
+                if (decrypted.status === 200) {
+                    setShowServiceTrans(decrypted.data);
                 } else {
-                    dispatch(callAlert({ message: error.message, type: 'FAILED' }))
+                    dispatch(
+                        callAlert({ message: decrypted.message || "Failed", type: "FAILED" })
+                    );
                 }
-
+            } catch (error) {
+                console.error("❌ Error:", error);
+                dispatch(
+                    callAlert({
+                        message: error?.response?.data?.error || error.message,
+                        type: "FAILED",
+                    })
+                );
             }
-        }
+        };
 
         if (fromDate || toDate) {
             getTnx();
         }
-
     }, [fromDate, toDate, dispatch]);
+
 
     const handleFromDateChange = (date) => {
         setFromDate(date);
-      };
-    
-      const handleToDateChange = (date) => {
+    };
+
+    const handleToDateChange = (date) => {
         setToDate(date);
-      };
+    };
 
-      const [selectedValue, setSelectedValue] = useState('');
+    const [selectedValue, setSelectedValue] = useState('');
 
-        const handleChange = (event) => {
-            setSelectedValue(event.target.value);
-        };
-        const FilterRow = styled(Box)(({ theme }) => ({
-  background: "#f5faff",
-  borderRadius: 12,
-  boxShadow: "0 2px 12px 0 rgba(0,0,0,0.06)",
-  padding: "16px",
-  display: "flex",
-  alignItems: "center",
-  gap: 20,
-  marginBottom: 10,
-  flexWrap: "nowrap",
-  justifyContent: "flex-start",
-}));
+    const handleChange = (event) => {
+        setSelectedValue(event.target.value);
+    };
+    const FilterRow = styled(Box)(({ theme }) => ({
+        background: "#f5faff",
+        borderRadius: 12,
+        boxShadow: "0 2px 12px 0 rgba(0,0,0,0.06)",
+        padding: "16px",
+        display: "flex",
+        alignItems: "center",
+        gap: 20,
+        marginBottom: 10,
+        flexWrap: "nowrap",
+        justifyContent: "flex-start",
+    }));
 
     return (
-        
+
         <Layout>
             <Grid container spacing={4} sx={{ padding: 2 }}>
                 <Grid item={true} xs={12}>
@@ -188,8 +204,8 @@ function MeetingDetailsReport(props) {
                                                 lineHeight: 20,
                                                 minWidth: 140,
                                                 maxWidth: 170,
-                                                background:"#fff"
-                                              }}
+                                                background: "#fff"
+                                            }}
                                             format="DD-MM-YYYY"
                                             onChange={handleFromDateChange}
                                         />
@@ -201,33 +217,33 @@ function MeetingDetailsReport(props) {
                                                 lineHeight: 20,
                                                 minWidth: 140,
                                                 maxWidth: 170,
-                                                 background:"#fff"
-                                              }}
+                                                background: "#fff"
+                                            }}
                                             format="DD-MM-YYYY"
                                             onChange={handleToDateChange}
                                         />
                                     </Box>
                                 </LocalizationProvider>
-                                
+
                             </Box>
-                            <Button 
-                                    variant="contained" 
-                                    color="primary"
-                                    onClick={handleGenerateReport}
-                                    sx={{
-                                        borderRadius: 2,
-                                        fontWeight: 700,
-                                        fontSize: 16,
-                                        px: 3,
-                                        py: 1,
-                                        background: "linear-gradient(90deg, #2196f3 0%, #21cbf3 100%)",
-                                        boxShadow: "0 2px 8px 0 rgba(33, 203, 243, 0.15)",
-                                        textTransform: "none",
-                                        whiteSpace: "nowrap",
-                                      }}
-                                >
-                                    Generate Report
-                                </Button>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={handleGenerateReport}
+                                sx={{
+                                    borderRadius: 2,
+                                    fontWeight: 700,
+                                    fontSize: 16,
+                                    px: 3,
+                                    py: 1,
+                                    background: "linear-gradient(90deg, #2196f3 0%, #21cbf3 100%)",
+                                    boxShadow: "0 2px 8px 0 rgba(33, 203, 243, 0.15)",
+                                    textTransform: "none",
+                                    whiteSpace: "nowrap",
+                                }}
+                            >
+                                Generate Report
+                            </Button>
                         </Box>
                     </FilterRow>
                 </Grid>

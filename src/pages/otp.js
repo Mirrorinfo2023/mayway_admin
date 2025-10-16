@@ -13,7 +13,7 @@ import { styled } from "@mui/material/styles";
 import MessageIcon from "@mui/icons-material/Message";
 import TimerOffIcon from "@mui/icons-material/TimerOff";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-
+import { DataDecrypt, DataEncrypt } from "../../utils/encryption";
 const drawWidth = 220;
 const getDate = (timeZone) => {
   const dateString = timeZone;
@@ -107,9 +107,19 @@ function OtpReport(props) {
 
       try {
         const response = await api.post("/api/report/otp");
-        if (response.status === 200) {
-          setShowServiceTrans(response.data.otpResult);
-          setmasterReport(response.data.report);
+
+        if (response.data?.data) {
+          // Decrypt the server’s response
+          const decryptedResp = DataDecrypt(response.data.data);
+          console.log("decryptedResp ", decryptedResp)
+          if (decryptedResp.status === 200) {
+            setShowServiceTrans(decryptedResp.otpResult);
+            setmasterReport(decryptedResp.report);
+          } else {
+            alert(decryptedResp.message || "Failed to fetch OTP report");
+          }
+        } else {
+          alert("Invalid response from server");
         }
       } catch (error) {
         // if (error?.response?.data?.error) {
