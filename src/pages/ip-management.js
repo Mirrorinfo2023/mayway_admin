@@ -30,21 +30,21 @@ import api from "../../utils/api";
 import { DataEncrypt, DataDecrypt } from "../../utils/encryption";
 
 export default function IpManagement() {
-    const [allIpRequests, setAllIpRequests] = useState([]); // store full data
-    const [ipRequests, setIpRequests] = useState([]); // filtered data
+    const [allIpRequests, setAllIpRequests] = useState([]);
+    const [ipRequests, setIpRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
     const [selectedIp, setSelectedIp] = useState(null);
     const [rejectReason, setRejectReason] = useState('');
     const [updating, setUpdating] = useState(false);
 
-    // Search & Filter
+    // Filters
     const [searchName, setSearchName] = useState('');
     const [searchStatus, setSearchStatus] = useState('');
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
 
-    // 🗓️ Set current month start → today
+    // Set date range default: current month
     useEffect(() => {
         const formatDate = (date) => {
             const year = date.getFullYear();
@@ -52,33 +52,31 @@ export default function IpManagement() {
             const day = String(date.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         };
-
         const now = new Date();
         const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
         const today = new Date();
 
-        setFromDate(formatDate(firstDay)); // ✅ Correct local month start
-        setToDate(formatDate(today));      // ✅ Correct today's date
+        setFromDate(formatDate(firstDay));
+        setToDate(formatDate(today));
     }, []);
 
-    // 📦 Fetch data only when date changes
+    // Fetch IP requests
     const fetchIpRequests = async () => {
         try {
             setLoading(true);
-
             const payload = { from_date: fromDate, to_date: toDate };
             const res = await api.post('/api/users/get-ips-list', payload);
             const decrypted = DataDecrypt(res.data);
             const data = typeof decrypted === 'string' ? JSON.parse(decrypted) : decrypted;
 
             if (data.status === 200) {
+                console.log("✅ Fetched IP requests:", data.data);
                 setAllIpRequests(data.data || []);
                 setIpRequests(data.data || []);
             } else {
                 setAllIpRequests([]);
                 setIpRequests([]);
             }
-
         } catch (err) {
             console.error('❌ Error fetching IP requests:', err);
         } finally {
@@ -90,7 +88,7 @@ export default function IpManagement() {
         if (fromDate && toDate) fetchIpRequests();
     }, [fromDate, toDate]);
 
-    // 🔍 Real-time frontend search filter
+    // Filter data in frontend
     useEffect(() => {
         let filtered = [...allIpRequests];
 
@@ -110,25 +108,31 @@ export default function IpManagement() {
         setIpRequests(filtered);
     }, [searchName, searchStatus, allIpRequests]);
 
-    // 🧹 Reset filters
     const handleResetFilters = () => {
         setSearchName('');
         setSearchStatus('');
         setIpRequests(allIpRequests);
     };
 
-    // Update IP status
+    // ✅ Update IP Status (Approve / Reject)
     const updateIpStatus = async (ipId, status, reason = '') => {
         try {
+            
             setUpdating(true);
+            // Construct payload with correct backend key
             const payload = { id: ipId, status, reason };
+            console.log("📦 Payload sending to backend:", payload);
+
             const encReq = DataEncrypt(JSON.stringify(payload));
+
+            // Send exactly as backend expects
             const res = await api.post('/api/users/update-status-ips', { encReq });
+
             const decrypted = DataDecrypt(res.data);
             const data = typeof decrypted === 'string' ? JSON.parse(decrypted) : decrypted;
 
             if (data.status === 200) {
-                alert(data.message || 'Status updated');
+                alert(data.message || 'Status updated successfully');
                 fetchIpRequests();
                 setRejectDialogOpen(false);
                 setRejectReason('');
@@ -137,13 +141,14 @@ export default function IpManagement() {
                 alert(data.message || 'Failed to update');
             }
         } catch (err) {
-            console.error('Error updating IP status:', err);
+            console.error('❌ Error updating IP status:', err);
             alert('Failed to update IP status');
         } finally {
             setUpdating(false);
         }
     };
 
+    // Reject Handlers
     const handleRejectClick = (ip) => {
         setSelectedIp(ip);
         setRejectReason('');
@@ -155,15 +160,32 @@ export default function IpManagement() {
             alert('Please enter rejection reason');
             return;
         }
-        updateIpStatus(selectedIp.id, 2, rejectReason);
+
+        const ipId = selectedIp?.id || selectedIp?.ip_id;
+        if (!ipId) {
+            alert('Error: IP ID missing');
+            console.error('🚫 No IP ID found in selectedIp:', selectedIp);
+            return;
+        }
+
+        updateIpStatus(ipId, 2, rejectReason);
     };
 
+    // Approve Handler
     const handleApprove = (ip) => {
+        const ipId = ip?.id || ip?.ip_id;
+        if (!ipId) {
+            alert('Error: IP ID missing');
+            console.error('🚫 No IP ID found in IP record:', ip);
+            return;
+        }
+
         if (confirm(`Approve IP: ${ip.ip_address}?`)) {
-            updateIpStatus(ip.id, 1);
+            updateIpStatus(ipId, 1);
         }
     };
 
+    // Status Chip
     const getStatusChip = (status) => {
         switch (status) {
             case 0: return <Chip label="Pending" color="warning" size="small" />;
@@ -203,7 +225,6 @@ export default function IpManagement() {
                     <Card sx={{ boxShadow: 2, mb: 3 }}>
                         <CardContent>
                             <Grid container spacing={2} alignItems="center">
-                                {/* Search by Name */}
                                 <Grid item xs={12} sm={6} md={3}>
                                     <TextField
                                         fullWidth
@@ -221,7 +242,6 @@ export default function IpManagement() {
                                     />
                                 </Grid>
 
-                                {/* Status */}
                                 <Grid item xs={12} sm={6} md={2}>
                                     <TextField
                                         select
@@ -238,7 +258,6 @@ export default function IpManagement() {
                                     </TextField>
                                 </Grid>
 
-                                {/* From Date */}
                                 <Grid item xs={12} sm={6} md={2}>
                                     <TextField
                                         fullWidth
@@ -251,7 +270,6 @@ export default function IpManagement() {
                                     />
                                 </Grid>
 
-                                {/* To Date */}
                                 <Grid item xs={12} sm={6} md={2}>
                                     <TextField
                                         fullWidth
@@ -264,7 +282,6 @@ export default function IpManagement() {
                                     />
                                 </Grid>
 
-                                {/* Reset */}
                                 <Grid item xs={12} sm={6} md={2}>
                                     <Button variant="outlined" onClick={handleResetFilters} fullWidth>
                                         Reset
@@ -274,7 +291,7 @@ export default function IpManagement() {
                         </CardContent>
                     </Card>
 
-                    {/* 🧾 Table */}
+                    {/* 🧾 Table Section */}
                     <Card sx={{ boxShadow: 2 }}>
                         <CardContent sx={{ p: 0 }}>
                             <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
@@ -314,7 +331,7 @@ export default function IpManagement() {
                                         </TableHead>
                                         <TableBody>
                                             {ipRequests.map((ip) => (
-                                                <TableRow key={ip.id} hover>
+                                                <TableRow key={ip.id || ip.ip_id} hover>
                                                     <TableCell>{ip.user_name}</TableCell>
                                                     <TableCell>{formatDate(ip.created_on)}</TableCell>
                                                     <TableCell>{ip.ip_address}</TableCell>

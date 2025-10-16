@@ -97,7 +97,7 @@ const InvestMentTransactions = ({ showServiceTrans }) => {
 
             console.log("🔒 Encrypted Payload:", encryptedPayload);
 
-            const res = await api.put(`/api/prime-requests/${id}`, { data: encryptedPayload });
+            const res = await api.post(`/api/prime-requests/${id}`, { data: encryptedPayload });
 
             console.log("📩 First API raw response:", res.data);
 
@@ -170,7 +170,7 @@ const InvestMentTransactions = ({ showServiceTrans }) => {
             const encryptedPayload = DataEncrypt(JSON.stringify(payload));
 
             // 🔹 Send encrypted payload
-            const res = await api.put(`/api/prime-requests/${currentRejectId}`, { data: encryptedPayload });
+            const res = await api.post(`/api/prime-requests/${currentRejectId}`, { data: encryptedPayload });
 
             if (res.data.success) {
                 // 🔹 Decrypt response if needed

@@ -28,13 +28,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { styled } from "@mui/material/styles";
 
-const Item = styled(Paper)(({ theme }) => ({
-  backgroundColor: theme.palette.mode === "dark" ? "#1A2027" : "#fff",
-  ...theme.typography.body2,
-  padding: theme.spacing(1),
-  textAlign: "center",
-  color: theme.palette.text.secondary,
-}));
+
 
 const drawWidth = 220;
 
@@ -103,7 +97,7 @@ const StatIcon = styled("div")({
   zIndex: 1,
 });
 
-const FilterRow = styled(Box)(({ theme }) => ({
+const FilterRow = styled(Box)(() => ({
   background: "#f5faff",
   borderRadius: 12,
   boxShadow: "0 2px 12px 0 rgba(0,0,0,0.06)",

@@ -258,9 +258,7 @@ const CourseReportTable = () => {
                     category_id: formData.category,
                     status: 1,
                 };
-
                 const encryptedPayload = DataEncrypt(JSON.stringify(payload));
-
                 const formDataToSend = new FormData();
                 formDataToSend.append("data", encryptedPayload);
 
@@ -270,7 +268,6 @@ const CourseReportTable = () => {
                 const res = await api.post("/api/courses_video/add-video", formDataToSend, {
                     headers: { "Content-Type": "multipart/form-data" },
                 });
-
                 if (res.data?.data) {
                     const decryptedResp = DataDecrypt(res.data.data);
                     if (decryptedResp.status === 201) {
@@ -281,6 +278,7 @@ const CourseReportTable = () => {
                         alert(decryptedResp.message || "Failed to add video");
                     }
                 }
+
             }
         } catch (err) {
             console.error(err);

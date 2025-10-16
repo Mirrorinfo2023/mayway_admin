@@ -124,9 +124,13 @@ export default function Dashboard() {
     const fetchPrimeData = async () => {
       try {
         const res = await API.get("/api/admin/profitreturnreport");
-        if (res.status === 200 && res.data) {
-          // Save report & topEarners in state
-          setData((prev) => ({
+
+        // --- Decrypt response ---
+        const decrypted = DataDecrypt(res.data.data);
+        console.log("✅ Decrypted Profit Return Report:", decrypted);
+
+        if (decrypted.success) {
+          setData(prev => ({
             ...prev,
             profitReturn: {
               report: res.data.report || [],

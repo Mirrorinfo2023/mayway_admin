@@ -26,14 +26,6 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import HighlightOffIcon from "@mui/icons-material/HighlightOff";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 
-const Item = styled(Paper)(({ theme }) => ({
-  backgroundColor: theme.palette.mode === "dark" ? "#1A2027" : "#fff",
-  ...theme.typography.body2,
-  padding: theme.spacing(1),
-  textAlign: "center",
-  color: theme.palette.text.secondary,
-}));
-
 const StatCard = styled(Paper)(({ bgcolor }) => ({
   background: bgcolor,
   color: "#fff",
@@ -132,9 +124,15 @@ function RedeemReport(props) {
           reqData
         );
 
+        console.log("response ", response)
         if (response.status === 200) {
-          setShowServiceTrans(response.data.data);
-          setReport(response.data.report);
+          // 🧩 Step 3: Decrypt the backend’s response
+          const decryptedData = DataDecrypt(response.data.data || "");
+          const parsedData = decryptedData;
+
+          // 🧩 Step 4: Use decrypted data
+          setShowServiceTrans(parsedData.data);
+          setReport(parsedData.report);
         }
       } catch (error) {
         if (error?.response?.data?.error) {

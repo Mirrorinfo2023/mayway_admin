@@ -69,7 +69,7 @@ const StatIcon = styled("div")({
   fontSize: 64,
   zIndex: 1,
 });
-const FilterRow = styled(Box)(({ theme }) => ({
+const FilterRow = styled(Box)(() => ({
   background: "#f5faff",
   borderRadius: 12,
   boxShadow: "0 2px 12px 0 rgba(0,0,0,0.06)",

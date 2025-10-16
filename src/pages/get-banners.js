@@ -135,7 +135,7 @@ function BannersReport(props) {
     const generateReport = async () => {
         const reqData = {
             from_date: fromDate.toISOString().split('T')[0],
-            to_date: toDate.toISOString().split('T')[0]
+            to_date: toDate.toISOString().split('T')[0],
         };
 
 
@@ -143,28 +143,49 @@ function BannersReport(props) {
         try {
             // Fetch categories
             let catResp;
+
+            // ✅ Fetch categories if not already loaded
             if (categories.length === 0 || appCategories.length === 0) {
                 catResp = await api.get("/api/banner/get-banner-category");
-                if (catResp.status === 200) {
-                    setAppCategories(catResp.data.data.notificationApp);
-                    setCategories(catResp.data.data.bannersCategory);
+
+                // 🔓 Decrypt category response
+                const decryptedCat = DataDecrypt(catResp.data.data);
+                console.log("✅ Decrypted Category Response:", decryptedCat);
+
+                if (decryptedCat.status === 200) {
+                    setAppCategories(decryptedCat.data.notificationApp);
+                    setCategories(decryptedCat.data.bannersCategory);
                 }
             }
-            // console.log("reqData is: ", reqData)
-            // Fetch report
-            const response = await api.post("/api/banner/get-banner-report", reqData);
-            // console.log("response is: ", response)
-            if (response.status === 200) {
-                const appList = catResp?.data?.data?.notificationApp || appCategories;
-                const catList = catResp?.data?.data?.bannersCategory || categories;
 
-                const bannersWithNames = response.data.data.map(b => {
-                    const appName = appList.find(a => a.id === b.app_id)?.app_name || "N/A";
-                    const categoryName = catList.find(c => c.id === b.type_id)?.category_name || "N/A";
+            // ✅ Encrypt report request data
+            const encryptedReqData = DataEncrypt(JSON.stringify(reqData));
+
+            // ✅ Send encrypted request
+            const response = await api.post("/api/banner/get-banner-report", { data: encryptedReqData });
+
+            console.log("✅ Raw Report Response:", response);
+
+            // 🔓 Decrypt backend response
+            const decryptedResponse = DataDecrypt(response.data.data);
+            console.log("✅ Decrypted Report Response:", decryptedResponse);
+
+            if (decryptedResponse.status === 200) {
+                const appList = catResp
+                    ? decryptedCat.data.notificationApp
+                    : appCategories;
+                const catList = catResp
+                    ? decryptedCat.data.bannersCategory
+                    : categories;
+
+                const bannersWithNames = decryptedResponse.data.map((b) => {
+                    const appName = appList.find((a) => a.id === b.app_id)?.app_name || "N/A";
+                    const categoryName =
+                        catList.find((c) => c.id === b.type_id)?.category_name || "N/A";
                     return {
                         ...b,
                         app_name: appName,
-                        category: categoryName
+                        category: categoryName,
                     };
                 });
 
@@ -179,6 +200,7 @@ function BannersReport(props) {
             }
         }
     };
+
 
 
 
