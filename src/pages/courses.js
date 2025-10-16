@@ -260,6 +260,7 @@ const CourseReportTable = () => {
                         alert(decryptedResp.message || "Failed to add video");
                     }
                 }
+
             }
         } catch (err) {
             console.error(err);

@@ -16,6 +16,7 @@ import {
 import ReCAPTCHA from "react-google-recaptcha";
 import { useEffect, useState } from "react";
 import api from "../../../utils/api";
+import { DataDecrypt, DataEncrypt } from "../../../utils/encryption";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import FormControl from "@mui/material/FormControl";
 import { styled } from "@mui/material/styles";
@@ -48,9 +49,25 @@ const AddBannersTransactions = () => {
     const getCategories = async () => {
       try {
         const response = await api.get("/api/banner/get-banner-category");
-        if (response.status === 200) {
-          setAppCategories(response.data.data.notificationApp || []);
-          setCategories(response.data.data.bannersCategory || []);
+        console.log("Raw encrypted response:", response.data);
+
+        if (response.status === 200 && response.data?.data) {
+          // Step 1: Decrypt backend response
+          const decrypted = DataDecrypt(response.data.data);
+          console.log("Decrypted response (text):", decrypted);
+
+          // Step 2: Parse decrypted JSON
+          const parsedData =decrypted;
+          console.log("Parsed object:", parsedData);
+
+          // Step 3: Use parsed payload
+          if (parsedData.status === 200) {
+            setCategories(parsedData.data.bannersCategory || []);
+            setAppCategories(parsedData.data.notificationApp || []);
+            console.log("✅ Decrypted categories:", parsedData.data);
+          } else {
+            console.warn("Category fetch failed:", parsedData.message);
+          }
         }
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -58,6 +75,7 @@ const AddBannersTransactions = () => {
     };
     getCategories();
   }, []);
+
 
   const handleSubmit = async () => {
     if (!title || !transactionType || !appType || !selectedFile) {
