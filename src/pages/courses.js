@@ -241,15 +241,23 @@ const CourseReportTable = () => {
                     category_id: formData.category,
                     status: 1,
                 };
+
+                // Encrypt payload
                 const encryptedPayload = DataEncrypt(JSON.stringify(payload));
+
+                // Prepare FormData
                 const formDataToSend = new FormData();
                 formDataToSend.append("data", encryptedPayload);
                 if (selectedFile) {
                     formDataToSend.append("image", selectedFile);
                 }
-                const res = await api.post("/api/courses_video/add-video", formDataToSend, {
-                    headers: { "Content-Type": "multipart/form-data" },
-                });
+                console.log("formDataToSend", formDataToSend);
+
+                // ✅ Do NOT set Content-Type manually
+                const res = await api.post("/api/courses_video/add-video", formDataToSend);
+
+                console.log("res", res);
+
                 if (res.data?.data) {
                     const decryptedResp = DataDecrypt(res.data.data);
                     if (decryptedResp.status === 201) {
@@ -260,6 +268,7 @@ const CourseReportTable = () => {
                         alert(decryptedResp.message || "Failed to add video");
                     }
                 }
+
             }
         } catch (err) {
             console.error(err);

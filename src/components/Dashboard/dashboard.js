@@ -141,9 +141,10 @@ export default function Dashboard() {
 
         // Fetch report
         const res = await API.get("/api/admin/profitreturnreport");
+        console.log("✅ res Return Report:", res);
 
         // --- Decrypt response ---
-        const decrypted = DataDecrypt(res.data.data);
+        const decrypted = res.data
         console.log("✅ Decrypted Profit Return Report:", decrypted);
 
         if (decrypted.success) {

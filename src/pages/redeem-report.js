@@ -127,9 +127,11 @@ function RedeemReport(props) {
         // 🧩 Step 2: Send encrypted data to backend
         const response = await api.post("/api/report/get-redeem-report", reqData);
 
+        console.log("response ", response)
         if (response.status === 200) {
           // 🧩 Step 3: Decrypt the backend’s response
           const decryptedData = DataDecrypt(response.data.data || "");
+          console.log("decryptedData ", decryptedData)
           const parsedData = decryptedData;
 
           // 🧩 Step 4: Use decrypted data

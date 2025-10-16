@@ -145,19 +145,20 @@ function BannersReport(props) {
 
     const generateReport = async () => {
         const reqData = {
-            from_date: fromDate.toISOString().split('T')[0],
-            to_date: toDate.toISOString().split('T')[0],
+            from_date: fromDate.toISOString().split("T")[0],
+            to_date: toDate.toISOString().split("T")[0],
         };
 
         try {
             let catResp;
+            let decryptedCat = null; // ✅ initialize outside
 
             // ✅ Fetch categories if not already loaded
             if (categories.length === 0 || appCategories.length === 0) {
                 catResp = await api.get("/api/banner/get-banner-category");
 
                 // 🔓 Decrypt category response
-                const decryptedCat = DataDecrypt(catResp.data.data);
+                decryptedCat = DataDecrypt(catResp.data.data);
                 console.log("✅ Decrypted Category Response:", decryptedCat);
 
                 if (decryptedCat.status === 200) {
@@ -170,7 +171,9 @@ function BannersReport(props) {
             const encryptedReqData = DataEncrypt(JSON.stringify(reqData));
 
             // ✅ Send encrypted request
-            const response = await api.post("/api/banner/get-banner-report", { data: encryptedReqData });
+            const response = await api.post("/api/banner/get-banner-report", {
+                data: encryptedReqData,
+            });
 
             console.log("✅ Raw Report Response:", response);
 
@@ -179,22 +182,22 @@ function BannersReport(props) {
             console.log("✅ Decrypted Report Response:", decryptedResponse);
 
             if (decryptedResponse.status === 200) {
-                const appList = catResp
-                    ? decryptedCat.data.notificationApp
-                    : appCategories;
-                const catList = catResp
-                    ? decryptedCat.data.bannersCategory
-                    : categories;
+                const appList =
+                    catResp && decryptedCat
+                        ? decryptedCat.data.notificationApp
+                        : appCategories;
+                const catList =
+                    catResp && decryptedCat
+                        ? decryptedCat.data.bannersCategory
+                        : categories;
 
                 const bannersWithNames = decryptedResponse.data.map((b) => {
-                    const appName = appList.find((a) => a.id === b.app_id)?.app_name || "N/A";
+                    const appName =
+                        appList.find((a) => a.id === b.app_id)?.app_name || "N/A";
                     const categoryName =
-                        catList.find((c) => c.id === b.type_id)?.category_name || "N/A";
-                    return {
-                        ...b,
-                        app_name: appName,
-                        category: categoryName,
-                    };
+                        catList.find((c) => c.id === b.type_id)?.category_name ||
+                        "N/A";
+                    return { ...b, app_name: appName, category: categoryName };
                 });
 
                 setShowServiceTrans(bannersWithNames);
@@ -207,6 +210,7 @@ function BannersReport(props) {
             dispatch(callAlert({ message: error.message, type: "FAILED" }));
         }
     };
+
 
 
 
