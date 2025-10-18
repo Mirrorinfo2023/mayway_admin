@@ -78,6 +78,7 @@ let menuArray2 = [
   { redirect: 'courses', name: 'Courses', parent: 'networking' },
   { redirect: 'profit-return', name: 'Profit Return', parent: 'networking' },
   { redirect: 'ip-management', name: 'Ip Management', parent: 'networking' },
+  { redirect: 'todays-updates', name: "Today's Update", parent: 'networking' },
   
   // { redirect: 'prime-product-list', name: 'Prime Product Report', parent: 'networking' },
   // { redirect: 'package-purchase-list', name: 'Package Purchase Request', parent: 'networking' },
