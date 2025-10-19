@@ -16,7 +16,6 @@ import {
     Paper,
     InputAdornment,
 } from "@mui/material";
-import ReCAPTCHA from "react-google-recaptcha";
 
 // Icons
 import BadgeIcon from "@mui/icons-material/Badge";
@@ -61,7 +60,6 @@ function UploadKyc({ open, onClose }) {
     });
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
-    const [recaptchaToken, setRecaptchaToken] = useState(null);
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
@@ -94,7 +92,6 @@ function UploadKyc({ open, onClose }) {
             if (!formData.holderName) tempErrors.holderName = "Holder name required";
             if (!formData.ifsc) tempErrors.ifsc = "IFSC required";
             if (!formData.bankDoc) tempErrors.bankDoc = "Upload bank document";
-            if (!formData.recaptchaToken) tempErrors.recaptchaToken = "Please complete the reCAPTCHA verification";
         }
         setErrors(tempErrors);
         return Object.keys(tempErrors).length === 0;
@@ -107,10 +104,6 @@ function UploadKyc({ open, onClose }) {
 
     const handleSubmit = async () => {
         setLoading(true);
-        // if (!recaptchaToken) {
-        //     alert("Please complete the reCAPTCHA verification before submitting.");
-        //     return;
-        // }
         try {
             const data = new FormData();
 
@@ -145,7 +138,7 @@ function UploadKyc({ open, onClose }) {
 
             // ✅ Reset form and stepper after success
             setFormData({
-
+                
                 aadhaarNo: "",
                 address: "",
                 aadhaarFront: null,
@@ -407,14 +400,6 @@ function UploadKyc({ open, onClose }) {
                             <input type="file" name="bankDoc" hidden onChange={handleChange} />
                         </Button>
                         {errors.bankDoc && <Typography color="error">{errors.bankDoc}</Typography>}
-
-                        <Box sx={{ my: 2 }}>
-                            <ReCAPTCHA
-                                sitekey="6LdHTbwrAAAAAGawIo2escUPr198m8cP3o_ZzZK1" // or put your site key directly
-                                onChange={(token) => setRecaptchaToken(token)}
-                            />
-                            {errors.recaptchaToken && <Typography color="error">{errors.recaptchaToken}</Typography>}
-                        </Box>
 
                     </Paper>
                 );

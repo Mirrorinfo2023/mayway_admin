@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import api from "../../utils/api";
-import { DataEncrypt, DataDecrypt } from "../../utils/encryption";
 import withAuth from "../../utils/withAuth";
 import Layout from "@/components/Dashboard/layout";
 import AddMoneyRequestTransactions from "@/components/AddMoneyRequest/AddMoneyRequestReport";
@@ -28,7 +27,13 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { styled } from "@mui/material/styles";
 
-
+const Item = styled(Paper)(({ theme }) => ({
+  backgroundColor: theme.palette.mode === "dark" ? "#1A2027" : "#fff",
+  ...theme.typography.body2,
+  padding: theme.spacing(1),
+  textAlign: "center",
+  color: theme.palette.text.secondary,
+}));
 
 const drawWidth = 220;
 
@@ -97,7 +102,7 @@ const StatIcon = styled("div")({
   zIndex: 1,
 });
 
-const FilterRow = styled(Box)(() => ({
+const FilterRow = styled(Box)(({ theme }) => ({
   background: "#f5faff",
   borderRadius: 12,
   boxShadow: "0 2px 12px 0 rgba(0,0,0,0.06)",
@@ -129,34 +134,20 @@ function AddMoneyRequestReport() {
         from_date: fromDate.toISOString().split("T")[0],
         to_date: toDate.toISOString().split("T")[0],
       };
-      // console.log("🟢 reqData:", reqData);
 
       try {
-        // 🔹 Encrypt the request payload
-        const encryptedPayload = DataEncrypt(JSON.stringify(reqData));
-        // console.log("🟢 encryptedPayload:", encryptedPayload);
-
-        // 🔹 Send in the expected format
-        const response = await api.post("/api/add_money/add-money-list", {
-          data: encryptedPayload
-        });
-        // console.log("🟢 Response:", response);
-
-        if (response.data) {
-          // 🔹 Decrypt the response from backend
-          const decryptedData = DataDecrypt(response.data.data);
-          console.log("🟢 Decrypted Response:", decryptedData);
-
-          setShowServiceTrans(decryptedData.data);
-          setMasterReport(decryptedData.report);
+        const response = await api.post(
+          "/api/add_money/add-money-list",
+          reqData
+        );
+        if (response.data.status === 200) {
+          setShowServiceTrans(response.data.data);
+          setMasterReport(response.data.report);
         }
       } catch (error) {
-        console.error("🚨 Error fetching Add Money report:", error);
+        console.error("Error:", error);
       }
     };
-
-
-
 
     if (fromDate || toDate) {
       getTnx();
@@ -173,10 +164,10 @@ function AddMoneyRequestReport() {
     const isSearchTermMatch =
       (row.user_name &&
         row.user_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      // (row.user_id &&
-      //   row.user_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      // (row.mobile && row.mobile.includes(searchTerm)) ||
-      // (row.transaction_id && row.transaction_id.includes(searchTerm)) ||
+      (row.user_id &&
+        row.user_id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (row.mobile && row.mobile.includes(searchTerm)) ||
+      (row.transaction_id && row.transaction_id.includes(searchTerm)) ||
       (row.amount && row.amount.toString().includes(searchTerm));
 
     return isStatusMatch && isSearchTermMatch;

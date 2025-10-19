@@ -4,8 +4,6 @@ import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 import { styled } from '@mui/material/styles';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import api from "../../../utils/api";
-import { DataDecrypt, DataEncrypt } from "../../../utils/encryption";
-
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const ThemedTableContainer = styled(TableContainer)(({ theme }) => ({
@@ -89,63 +87,14 @@ const InvestMentTransactions = ({ showServiceTrans }) => {
 
     const handleApprove = async (id) => {
         try {
-            console.log("🟢 First API call starting...");
-
-            // ✅ Convert object → string before encryption
-            const payload = JSON.stringify({ status: "approved" });
-            const encryptedPayload = DataEncrypt(payload); // use your existing utility
-
-            console.log("🔒 Encrypted Payload:", encryptedPayload);
-
-            const res = await api.post(`/api/prime-requests/${id}`, { data: encryptedPayload });
-
-            console.log("📩 First API raw response:", res.data);
-
-            if (res.status === 200 && res.data.success) {
-                // ✅ Decrypt response safely
-                const decryptedResp = DataDecrypt(res.data.data);
-                console.log("🟢 Decrypted Response:", decryptedResp);
-
-                // Find current row
-                const currentRow = rows.find(row => row.id === id);
-                if (!currentRow) {
-                    alert("Row data not found");
-                    return;
-                }
-
-                // Referral payload
-                const referralPayload = {
-                    plan_id: currentRow.plan_id,
-                    user_id: currentRow.user_id,
-                    sender_user_id: currentRow.sender_user_id,
-                    amount: parseFloat(currentRow.amount),
-                    wallet: "Main"
-                };
-
-                // ✅ Encrypt referral payload (convert to string first)
-                const encryptedReferral = DataEncrypt(JSON.stringify(referralPayload));
-                console.log("🔒 Encrypted Referral Payload:", encryptedReferral);
-
-                const referralRes = await api.post(
-                    "/api/referral/plan/d376ca2995b3d140552f1bf6bc31c2eda6c9cfc8",
-                    { data: encryptedReferral }
-                );
-
-                console.log("📩 Second API response:", referralRes.data);
-
-                if (referralRes.status === 200) {
-                    alert("✅ Approved & referral confirmed successfully");
-                    location.reload();
-                } else {
-                    alert("⚠️ Approved but referral confirmation failed");
-                }
-            } else {
-                alert("❌ Failed to approve request");
+            const res = await api.post(`/api/prime-requests/${id}`, { status: "approved" });
+            if (res.data.success) {
+                alert("Approved successfully");
+                location.reload();
             }
         } catch (error) {
-            console.error("🚨 Full error details:", error);
-            console.error("Error response:", error.response);
-            alert("Something went wrong");
+            console.error(error);
+            alert("Failed to approve request");
         }
     };
 
@@ -160,34 +109,19 @@ const InvestMentTransactions = ({ showServiceTrans }) => {
             alert("Please enter a reason for rejection.");
             return;
         }
-
         try {
-            // 🔹 Prepare payload and encrypt
-            const payload = {
-                status: "rejected",
-                reason: rejectReason
-            };
-            const encryptedPayload = DataEncrypt(JSON.stringify(payload));
-
-            // 🔹 Send encrypted payload
-            const res = await api.post(`/api/prime-requests/${currentRejectId}`, { data: encryptedPayload });
-
+            const res = await api.post(`/api/prime-requests/${currentRejectId}`, { status: "rejected", reason: rejectReason });
             if (res.data.success) {
-                // 🔹 Decrypt response if needed
-                const decryptedResp = DataDecrypt(res.data.data);
-                console.log("🟢 Decrypted response:", decryptedResp);
-
                 alert("Rejected successfully");
                 location.reload();
             }
         } catch (error) {
-            console.error("🚨 Submit reject error:", error);
+            console.error(error);
             alert("Failed to reject request");
         } finally {
             setRejectModalOpen(false);
         }
     };
-
 
     const openImage = (url) => window.open(url, "_blank");
 
@@ -230,14 +164,8 @@ const InvestMentTransactions = ({ showServiceTrans }) => {
                                             <StyledTableCell>{row.last_name}</StyledTableCell>
                                             <StyledTableCell>{row.amount}</StyledTableCell>
                                             <StyledTableCell>{row.remark}</StyledTableCell>
+                                            <StyledTableCell>{row.utr_id}</StyledTableCell>
                                             <StyledTableCell>
-                                                {Array.isArray(row.utr_id)
-                                                    ? row.utr_id.join(' || ')
-                                                    : typeof row.utr_id === 'string'
-                                                        ? JSON.parse(row.utr_id).join(' || ')
-                                                        : row.utr_id
-                                                }
-                                            </StyledTableCell>                                            <StyledTableCell>
                                                 {row.image_url?.map((img, idx) => (
                                                     <img
                                                         key={idx}

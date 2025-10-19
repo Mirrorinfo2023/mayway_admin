@@ -48,7 +48,7 @@ let menuArray = [
   // { redirect: '#', name: 'Recharge/Payment', parent: 'recharge', icon: <PaymentIcon sx={{ fontSize: 20 }} /> },
   // { redirect: '#', name: 'Staff', parent: 'staff', icon: <PeopleIcon sx={{ fontSize: 20 }} /> },
   // { redirect: '#', name: 'Investment', parent: 'investment', icon: <PeopleIcon sx={{ fontSize: 20 }} /> },
-  // { redirect: '#', name: 'Settings', parent: 'setting', icon: <SettingsIcon sx={{ fontSize: 20 }} /> }
+  { redirect: '#', name: 'Settings', parent: 'setting', icon: <SettingsIcon sx={{ fontSize: 20 }} /> }
 ]
 
 let menuArray1 = [
@@ -63,11 +63,9 @@ let menuArray1 = [
   // { redirect: 'meeting', name: 'Meeting Report', parent: 'masters' },
   { redirect: 'get-meeting-enroll-report', name: 'Meeting Enroll Report', parent: 'masters' },
   // { redirect: 'product-list', name: 'Product List', parent: 'masters' },
-  // { redirect: 'profit-return', name: 'Profit Return', parent: 'masters' },
-  { redirect: 'massage-setting', name: 'Massage Setting', parent: 'masters' },
-  { redirect: 'slab-setting', name: 'marketing', parent: 'masters' },
-  { redirect: 'whatsapp-setting', name: 'Whatsapp Setting', parent: 'masters' },
-
+  { redirect: 'profit-return', name: 'Profit Return', parent: 'masters' },
+   { redirect: 'massage-setting', name: 'Massage Setting', parent: 'masters' },
+  { redirect: 'slab-setting', name: 'marketing', parent: 'masters' }
 ];
 
 let menuArray2 = [
@@ -76,10 +74,7 @@ let menuArray2 = [
   { redirect: 'income-report', name: 'Income Report', parent: 'networking' },
   { redirect: 'prime-user-report', name: 'Prime User Report', parent: 'networking' },
   { redirect: 'courses', name: 'Courses', parent: 'networking' },
-  { redirect: 'profit-return', name: 'Profit Return', parent: 'networking' },
-  { redirect: 'ip-management', name: 'Ip Management', parent: 'networking' },
-  { redirect: 'todays-updates', name: "Today's Update", parent: 'networking' },
-  
+  // { redirect: 'insurance-list', name: 'Insurance List', parent: 'networking' },
   // { redirect: 'prime-product-list', name: 'Prime Product Report', parent: 'networking' },
   // { redirect: 'package-purchase-list', name: 'Package Purchase Request', parent: 'networking' },
 ]
@@ -90,8 +85,8 @@ let menuArray3 = [
   { redirect: 'otp', name: 'OTP Report', parent: 'wallet' },
   { redirect: 'kyc-report', name: 'KYC Report', parent: 'wallet' },
   { redirect: 'feedback-report', name: 'Feedback Report', parent: 'wallet' },
-  { redirect: 'investment', name: 'Prime Activation', parent: 'wallet' },
-  { redirect: 'add-money-request', name: 'Add Money Request', parent: 'wallet' },
+  { redirect: 'investment', name: 'Prime', parent: 'wallet' },
+  // { redirect: 'add-money-request', name: 'Add Money Request', parent: 'wallet' },
   // { redirect: 'cashback-report', name: 'Cashback Report', parent: 'wallet' },
   // { redirect: 'prime-wallet-report', name: 'Prime Wallet Report', parent: 'wallet' },
   // { redirect: 'epin-wallet-summary', name: 'User Epin Summary', parent: 'wallet' },
@@ -124,11 +119,11 @@ let menuArray6 = [
 
 
 let menuArray7 = [
-  // { redirect: 'system-setting', name: 'System Setting', parent: 'setting' },
-  // { redirect: 'recharge-panel', name: 'Recharge Panel', parent: 'setting' },
-  // { redirect: 'whatsapp-setting', name: 'Whatsapp Setting', parent: 'setting' },
+  { redirect: 'system-setting', name: 'System Setting', parent: 'setting' },
+  { redirect: 'recharge-panel', name: 'Recharge Panel', parent: 'setting' },
+  { redirect: 'whatsapp-setting', name: 'Whatsapp Setting', parent: 'setting' },
   // { redirect: 'pages-setting', name: 'Content', parent: 'setting' },
-  // { redirect: 'partner-transaction-history', name: 'Partner Transactions', parent: 'setting' },
+  { redirect: 'partner-transaction-history', name: 'Partner Transactions', parent: 'setting' },
   // { redirect: 'massage-setting', name: 'Massage Setting', parent: 'setting' },
   // { redirect: 'slab-setting', name: 'marketing', parent: 'setting' }
 ]
@@ -161,7 +156,7 @@ function getMenuNameByPath(path) {
   // Remove leading slash
   const cleanPath = path.replace(/^\//, '');
   // Search all menu arrays
-  const allMenus = [menuArray, ...Object.values({ menuArray1, menuArray2, menuArray3, menuArray4, menuArray5, menuArray6, })];
+  const allMenus = [menuArray, ...Object.values({ menuArray1, menuArray2, menuArray3, menuArray4, menuArray5, menuArray6, menuArray7 })];
   for (const arr of allMenus) {
     const found = arr.find(item => item.redirect === cleanPath);
     if (found) return found.name;
@@ -171,7 +166,7 @@ function getMenuNameByPath(path) {
 
 function isWorkflowTab(path) {
   const cleanPath = path.replace(/^\//, '').split('?')[0].split('#')[0];
-  const allMenus = [menuArray, ...Object.values({ menuArray1, menuArray2, menuArray3, menuArray4, menuArray5, menuArray6, })];
+  const allMenus = [menuArray, ...Object.values({ menuArray1, menuArray2, menuArray3, menuArray4, menuArray5, menuArray6, menuArray7, menuArray8 })];
   for (const arr of allMenus) {
     if (arr.some(item => item.redirect === cleanPath)) return true;
   }
@@ -237,12 +232,10 @@ function Layout(props) {
     } else if (checkPathInMenuArray(menuArray6)) {
       setSelectedMenu(6);
       setCurrentMenu('staff');
-    }
-    // else if (checkPathInMenuArray(menuArray7)) {
-    //   setSelectedMenu(7);
-    //   setCurrentMenu('setting');
-    // }
-    else {
+    } else if (checkPathInMenuArray(menuArray7)) {
+      setSelectedMenu(7);
+      setCurrentMenu('setting');
+    } else {
       setSelectedMenu(0);
     }
   }, [pathName]);
@@ -422,7 +415,7 @@ function Layout(props) {
     recharge: menuArray5,
     staff: menuArray6,
     // investment: menuArray8,
-    // setting: menuArray7,
+    setting: menuArray7,
   };
 
   // New renderMenu for dropdowns

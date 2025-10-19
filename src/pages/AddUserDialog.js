@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
     Grid,
     TextField,
@@ -14,9 +14,7 @@ import {
 import api from "../../utils/api"; // axios instance
 import { DataEncrypt, DataDecrypt } from "../../utils/encryption";
 import axios from "axios"
-import ReCAPTCHA from "react-google-recaptcha";
-const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "YOUR_RECAPTCHA_SITE_KEY";
-
+// Icons
 import PersonIcon from "@mui/icons-material/Person";
 import EmailIcon from "@mui/icons-material/Email";
 import LockIcon from "@mui/icons-material/Lock";
@@ -59,11 +57,10 @@ export default function AddUserDialog({ open, onClose }) {
         dob: "",
     });
     const [postOffices, setPostOffices] = useState([]);
-    const [recaptchaToken, setRecaptchaToken] = useState(null);
+
     const [errors, setErrors] = useState({});
     const [referralStatus, setReferralStatus] = useState(null); // null, true, false
     const [loadingReferral, setLoadingReferral] = useState(false);
-    const recaptchaRef = useRef(null);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -78,7 +75,7 @@ export default function AddUserDialog({ open, onClose }) {
         }
     };
 
-    // Validation rules
+    // ✅ Validation rules
     const validateForm = () => {
         let tempErrors = {};
 
@@ -114,17 +111,14 @@ export default function AddUserDialog({ open, onClose }) {
         if (!formData.city) tempErrors.city = "City is required";
         if (!formData.address) tempErrors.address = "Address is required";
 
+        // if (!formData.circle.trim()) tempErrors.circle = "Circle is required";
+        // if (!formData.district.trim()) tempErrors.district = "District is required";
+        // if (!formData.division.trim()) tempErrors.division = "Division is required";
+        // if (!formData.region.trim()) tempErrors.region = "Region is required";
         if (!formData.dob.trim()) tempErrors.dob = "Date of Birth is required";
-
-        // ReCAPTCHA
-        if (!recaptchaToken) tempErrors.recaptcha = "Please complete the reCAPTCHA";
 
         setErrors(tempErrors);
         return Object.keys(tempErrors).length === 0;
-    };
-    const onRecaptchaChange = (token) => {
-        setRecaptchaToken(token);
-        setErrors((prev) => ({ ...prev, recaptcha: "" }));
     };
 
     // 🔹 Fetch state
@@ -268,8 +262,9 @@ export default function AddUserDialog({ open, onClose }) {
             return;
         }
 
+        console.log("formdata is: ", formData)
         try {
-            const payload = { ...formData, recaptcha_token: recaptchaToken };
+            const payload = { ...formData };
             const encReq = DataEncrypt(JSON.stringify(payload));
 
             const response = await api.post(
@@ -278,11 +273,11 @@ export default function AddUserDialog({ open, onClose }) {
                 { headers: { "Content-Type": "application/json" } }
             );
 
-            // If backend returns encrypted payload, you may want to decrypt similar to other calls
-            console.log("✅ Registration Success:", response?.data || response.message);
+            // const decrypted = (response.data);
+            console.log("✅ Registration Success:", response.message);
             alert("User registered successfully!");
 
-            // Reset form fields
+            // ✅ Reset form fields
             setFormData({
                 referred_by: "",
                 first_name: "",
@@ -298,18 +293,13 @@ export default function AddUserDialog({ open, onClose }) {
                 division: "",
                 region: "",
                 dob: "",
-                state: "",
-                city: "",
-                address: "",
             });
 
-            // Reset errors and referral status and recaptcha
+            // ✅ Reset errors and referral status
             setErrors({});
             setReferralStatus(null);
-            setRecaptchaToken(null);
-            if (recaptchaRef.current) recaptchaRef.current.reset();
 
-            onClose();
+            onClose(); // optional: close dialog
         } catch (error) {
             let decryptedError = error.response?.data;
             try {
@@ -317,12 +307,10 @@ export default function AddUserDialog({ open, onClose }) {
             } catch (e) {
                 console.warn("⚠️ Could not decrypt error response:", e);
             }
-            console.error("❌ Registration Failed:", decryptedError || error);
-            alert(`Registration failed: ${decryptedError?.message || error.message}`);
-
-            // optional: reset recaptcha so user can try again
-            setRecaptchaToken(null);
-            if (recaptchaRef.current) recaptchaRef.current.reset();
+            console.error("❌ Registration Failed:", decryptedError);
+            alert(
+                `Registration failed: ${decryptedError?.message || error.message}`
+            );
         }
     };
 
@@ -649,22 +637,6 @@ export default function AddUserDialog({ open, onClose }) {
                                 />
                             )}
                         />
-                    </Grid>
-
-                    {/* reCAPTCHA area */}
-                    <Grid item xs={12} sx={{ display: "flex", justifyContent: "flex-start", mt: 1 }}>
-                        <div>
-                            <ReCAPTCHA
-                                ref={recaptchaRef}
-                                sitekey={RECAPTCHA_SITE_KEY}
-                                onChange={onRecaptchaChange}
-                            />
-                            {errors.recaptcha && (
-                                <Typography sx={{ color: "red", fontSize: "0.75rem", mt: 0.5 }}>
-                                    {errors.recaptcha}
-                                </Typography>
-                            )}
-                        </div>
                     </Grid>
 
                 </Grid>

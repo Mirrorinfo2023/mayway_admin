@@ -13,7 +13,6 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import api from "../../../utils/api";
-import { DataEncrypt, DataDecrypt } from "../../../utils/encryption";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import { styled } from "@mui/material/styles";
 import * as React from "react";
@@ -169,27 +168,19 @@ const IncomeTransactions = ({ showServiceTrans }) => {
       linHeight: 15,
       padding: 7,
       borderRight: "1px solid rgba(224, 224, 224, 1)",
-      borderBottom: "1px solid rgba(224, 224, 224, 1)",
+      borderBottom: 0,
     },
     [`&.${tableCellClasses.body}`]: {
       fontSize: 12,
       linHeight: 15,
       padding: 7,
       borderRight: "1px solid rgba(224, 224, 224, 1)",
-      borderBottom: "1px solid rgba(224, 224, 224, 1)",
     },
   }));
 
   const StyledTableRow = styled(TableRow)(({ theme }) => ({
     "&:nth-of-type(odd)": {
       backgroundColor: theme.palette.action.hover,
-    },
-    // Add border to table rows
-    "& td": {
-      borderBottom: "1px solid rgba(224, 224, 224, 1)",
-    },
-    "& th": {
-      borderBottom: "1px solid rgba(224, 224, 224, 1)",
     },
   }));
 
@@ -240,9 +231,23 @@ const IncomeTransactions = ({ showServiceTrans }) => {
   };
 
   const handleOKButtonClick = async () => {
-    if (!UserId) return console.error("UserId is missing.");
+    if (!UserId) {
+      console.error("UserId is missing.");
+      return;
+    }
+    let remark = "";
 
-    let remark = status === 1 ? "Approve" : status === 2 ? rejectionReason : "";
+    let action = "";
+    if (status === 1) {
+      remark = "Approve";
+      action = "Approve";
+    } else if (status === 2) {
+      remark = rejectionReason;
+      action = "Reject";
+    } else {
+      remark = "";
+      action = "Pending";
+    }
 
     const requestData = {
       user_id: UserId,
@@ -250,28 +255,23 @@ const IncomeTransactions = ({ showServiceTrans }) => {
       amount: amount,
       trans_no: TransNo,
       remarks: remark,
-      status: status
+      status: status,
     };
 
     try {
-      // 🔐 Step 1: Encrypt request
-      const encryptedReq = DataEncrypt(JSON.stringify(requestData));
+      let response = [];
 
-      // 🔐 Step 2: Send encrypted request
-      const response = await api.post("/api/referral/plan/reject-redeem", { data: encryptedReq });
+      response = await api.post(
+        "/api/referral/plan/reject-redeem",
+        requestData
+      );
 
-      // 🔓 Step 3: Decrypt response
-      if (response.data?.data) {
-        const decryptedResp = DataDecrypt(response.data.data);
-
-        console.log("decryptedResp ", decryptedResp)
-        if (decryptedResp.status === 200) {
-          alert(decryptedResp.message);
-          location.reload();
-        } else {
-          alert("Failed to update status.");
-          console.log(decryptedResp);
-        }
+      if (response.data.status === 200) {
+        alert(response.data.message);
+        location.reload();
+      } else {
+        alert("Failed to update status.");
+        console.log("Failed to update status.");
       }
     } catch (error) {
       console.error("Error:", error);
@@ -281,53 +281,35 @@ const IncomeTransactions = ({ showServiceTrans }) => {
     handleCloseModal2();
   };
 
-
   return (
     <main className="p-6 space-y-6">
       <Grid container spacing={4} sx={{ padding: "0px 16px" }}>
         <Grid item={true} xs={12}>
-          <TableContainer
-            component={Paper}
-            className={styles.tableContainer}
-            sx={{
-              border: "1px solid rgba(224, 224, 224, 1)",
-              borderRadius: "8px",
-              overflow: "auto"
-            }}
-          >
-            <Table
-              aria-label="Otp Report"
-              className={styles.table}
-              sx={{
-                borderCollapse: "collapse",
-                "& td, & th": {
-                  border: "1px solid rgba(224, 224, 224, 1)",
-                }
-              }}
-            >
+          <TableContainer component={Paper} className={styles.tableContainer}>
+            <Table aria-label="Otp Report" className={styles.table}>
               <TableHead>
                 <TableRow className={styles.tableHeadRow}>
-                  <StyledTableCell>Sr No.</StyledTableCell>
-                  <StyledTableCell>Redeem Type</StyledTableCell>
-                  <StyledTableCell>created date</StyledTableCell>
+                  <TableCell>Sr No.</TableCell>
+                  <TableCell>Redeem Type</TableCell>
+                  <TableCell>created date</TableCell>
 
-                  <StyledTableCell>User Name</StyledTableCell>
-                  <StyledTableCell>User Id</StyledTableCell>
-                  <StyledTableCell>Mobile</StyledTableCell>
-                  <StyledTableCell>Amt</StyledTableCell>
-                  <StyledTableCell>Credited Amt[90%]</StyledTableCell>
-                  <StyledTableCell>Deducted Amt[10%]</StyledTableCell>
-                  <StyledTableCell>Transaction No</StyledTableCell>
-                  <StyledTableCell>Payout Type</StyledTableCell>
-                  <StyledTableCell>Account No.</StyledTableCell>
-                  <StyledTableCell>Account holder name</StyledTableCell>
-                  <StyledTableCell>Bank name</StyledTableCell>
-                  <StyledTableCell>IFSC Code</StyledTableCell>
-                  <StyledTableCell>Remarks</StyledTableCell>
+                  <TableCell>User Name</TableCell>
+                  <TableCell>User Id</TableCell>
+                  <TableCell>Mobile</TableCell>
+                  <TableCell>Amt</TableCell>
+                  <TableCell>Credited Amt[90%]</TableCell>
+                  <TableCell>Deducted Amt[10%]</TableCell>
+                  <TableCell>Transaction No</TableCell>
+                  <TableCell>Payout Type</TableCell>
+                  <TableCell>Account No.</TableCell>
+                  <TableCell>Account holder name</TableCell>
+                  <TableCell>Bank name</TableCell>
+                  <TableCell>IFSC Code</TableCell>
+                  <TableCell>Remarks</TableCell>
 
-                  <StyledTableCell>Approval Remarks</StyledTableCell>
-                  <StyledTableCell>Status</StyledTableCell>
-                  <StyledTableCell>Action</StyledTableCell>
+                  <TableCell>Approval Remarks</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Action</TableCell>
                 </TableRow>
               </TableHead>
 
@@ -340,31 +322,32 @@ const IncomeTransactions = ({ showServiceTrans }) => {
                     )
                     : filteredRows
                   ).map((row, index) => (
-                    <StyledTableRow key={index} className={styles.tableRow}>
-                      <StyledTableCell>{index + 1 + page * rowsPerPage}</StyledTableCell>
-                      <StyledTableCell>{row.category}</StyledTableCell>
-                      <StyledTableCell className={styles.redeemDate}>
+                    <TableRow key={index} className={styles.tableRow}>
+                      <TableCell>{index + 1 + page * rowsPerPage}</TableCell>
+                      <TableCell>{row.category}</TableCell>
+                        <TableCell className={styles.redeemDate}>
                         {row.redeem_date}
-                      </StyledTableCell>
+                      </TableCell>
 
-                      <StyledTableCell>{row.first_name + " " + row.last_name}</StyledTableCell>
 
-                      <StyledTableCell className={styles.userIdCell}>{row.mlm_id}</StyledTableCell>
+                      <TableCell>{row.first_name + " " + row.last_name}</TableCell>
 
-                      <StyledTableCell>{row.mobile}</StyledTableCell>
-                      <StyledTableCell className={styles.amountCell}>{row.amount}</StyledTableCell>
-                      <StyledTableCell>{(row.amount * 0.9).toFixed(2)}</StyledTableCell>
-                      <StyledTableCell>{(row.amount * 0.1).toFixed(2)}</StyledTableCell>
-                      <StyledTableCell>{row.trans_no}</StyledTableCell>
-                      <StyledTableCell>{row.payout_type}</StyledTableCell>
-                      <StyledTableCell>{row.account_number}</StyledTableCell>
-                      <StyledTableCell>{row.account_holder}</StyledTableCell>
-                      <StyledTableCell>{row.bank_name}</StyledTableCell>
-                      <StyledTableCell>{row.ifsc_code}</StyledTableCell>
-                      <StyledTableCell>{row.remarks}</StyledTableCell>
-                      <StyledTableCell>{row.rejection_reason}</StyledTableCell>
+                      <TableCell className={styles.userIdCell}>{row.mlm_id}</TableCell>
 
-                      <StyledTableCell
+                      <TableCell>{row.mobile}</TableCell>
+                      <TableCell className={styles.amountCell}>{row.amount}</TableCell>
+                      <TableCell>{(row.amount * 0.9).toFixed(2)}</TableCell>
+                      <TableCell>{(row.amount * 0.1).toFixed(2)}</TableCell>
+                      <TableCell>{row.trans_no}</TableCell>
+                      <TableCell>{row.payout_type}</TableCell>
+                      <TableCell>{row.account_number}</TableCell>
+                      <TableCell>{row.account_holder}</TableCell>
+                      <TableCell>{row.bank_name}</TableCell>
+                      <TableCell>{row.ifsc_code}</TableCell>
+                      <TableCell>{row.remarks}</TableCell>
+                      <TableCell>{row.rejection_reason}</TableCell>
+                    
+                      <TableCell
                         className={
                           row.status === 1
                             ? styles.statusApproved
@@ -378,9 +361,9 @@ const IncomeTransactions = ({ showServiceTrans }) => {
                           : row.status === 2
                             ? "Rejected"
                             : "Pending"}
-                      </StyledTableCell>
-                      <StyledTableCell>
-                        <Box className={styles.actionButtons}>
+                      </TableCell>
+                      <TableCell>
+                        <StyledTableCell className={styles.actionButtons}>
                           {row.status === 0 ? (
                             <Box sx={{ display: "flex", gap: 1 }}>
                               <Button
@@ -417,116 +400,72 @@ const IncomeTransactions = ({ showServiceTrans }) => {
                           ) : null}
 
                           <Modal open={openModal1} onClose={handleCloseModal1}>
-                            <Box
-                              sx={{
-                                position: 'absolute',
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)', // center on screen
-                                width: 400,
-                                bgcolor: '#ffffff', // white background
-                                p: 4,
-                                borderRadius: 3,
-                                boxShadow: 24,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: 2,
-                                textAlign: 'center',
-                              }}
-                            >
-                              <Box
-                                sx={{
-                                  bgcolor: '#e0f7fa', // light blue box for approve
-                                  p: 2,
-                                  borderRadius: 2,
-                                  width: '100%',
-                                }}
-                              >
-                                <HelpOutlineOutlinedIcon sx={{ fontSize: 50, color: '#00796b' }} />
-                                <Typography variant="h6" sx={{ mt: 1, color: '#00796b' }}>
-                                  Are you sure to approve the Redeem request?
-                                </Typography>
-                              </Box>
-
-                              <Button
-                                variant="contained"
-                                size="large"
-                                color="success"
-                                onClick={handleOKButtonClick}
-                                sx={{ mt: 2, width: '50%' }}
-                              >
-                                OK
-                              </Button>
+                            <Box className={styles.modalBox}>
+                              <HelpOutlineOutlinedIcon
+                                className={styles.modalIcon}
+                                color="warning"
+                              />
+                              <Typography variant="h6">
+                                Are you sure to approve the Redeem request?
+                              </Typography>
+                              <Typography>
+                                <Button
+                                  variant="contained"
+                                  size="large"
+                                  color="success"
+                                  onClick={handleOKButtonClick}
+                                  className={styles.modalOkButton}
+                                >
+                                  OK
+                                </Button>
+                              </Typography>
                             </Box>
                           </Modal>
 
                           <Modal open={openModal2} onClose={handleCloseModal2}>
-                            <Box
-                              sx={{
-                                position: 'absolute',
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)', // center on screen
-                                width: 450,
-                                bgcolor: '#ffffff', // white background
-                                p: 4,
-                                borderRadius: 3,
-                                boxShadow: 24,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: 2,
-                                textAlign: 'center',
-                              }}
-                            >
-                              <HelpOutlineOutlinedIcon sx={{ fontSize: 50, color: '#d32f2f' }} />
-                              <Typography variant="h6" sx={{ mt: 1, color: '#d32f2f' }}>
+                            <Box className={styles.modalBox}>
+                              <HelpOutlineOutlinedIcon
+                                className={styles.modalIcon}
+                                color="warning"
+                              />
+                              <Typography variant="h6">
                                 Are you sure to Reject the Redeem Request?
                               </Typography>
-
                               <TextareaAutosize
-                                minRows={5}
+                                minRows={10}
                                 placeholder="Enter Rejection Reason"
-                                style={{
-                                  width: '100%',
-                                  padding: '10px',
-                                  borderRadius: '4px',
-                                  border: '1px solid #ccc',
-                                  fontSize: '16px',
-                                }}
+                                style={{ width: 400 }}
                                 value={rejectionReason}
                                 onBlur={handleTextareaChange}
                               />
-
-                              <Button
-                                variant="contained"
-                                size="large"
-                                color="error"
-                                onClick={handleOKButtonClick}
-                                sx={{ mt: 2, width: '50%' }}
-                              >
-                                OK
-                              </Button>
+                              <Typography>
+                                <Button
+                                  variant="contained"
+                                  size="large"
+                                  color="success"
+                                  onClick={handleOKButtonClick}
+                                  className={styles.modalOkButton}
+                                >
+                                  OK
+                                </Button>
+                              </Typography>
                             </Box>
                           </Modal>
-
-
-                        </Box>
-                      </StyledTableCell>
-                    </StyledTableRow>
+                        </StyledTableCell>
+                      </TableCell>
+                    </TableRow>
                   ))
                 ) : (
-                  <StyledTableRow>
-                    <StyledTableCell colSpan={19} align="center">
+                  <TableRow>
+                    <TableCell colSpan={18} align="center">
                       <Box className={styles.noRecordsBox}>
                         <InfoOutlinedIcon className={styles.noRecordsIcon} />
                         <Typography className={styles.noRecordsText}>
                           No Records Found.
                         </Typography>
                       </Box>
-                    </StyledTableCell>
-                  </StyledTableRow>
+                    </TableCell>
+                  </TableRow>
                 )}
               </TableBody>
             </Table>

@@ -2,27 +2,49 @@ import {
   Box,
   Button,
   TextField,
+  InputLabel,
+  Select,
+  MenuItem,
   Grid,
   Paper,
   TableContainer,
   Typography,
   Autocomplete,
+  Chip,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import api from "../../../utils/api";
 import * as React from "react";
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import FormControl from '@mui/material/FormControl';
+import { styled } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
-import ReCAPTCHA from "react-google-recaptcha";
-import { DataEncrypt ,DataDecrypt} from "../../../utils/encryption"; // Make sure this path is correct
+
+const VisuallyHiddenInput = styled('input')({
+  clip: 'rect(0 0 0 0)',
+  clipPath: 'inset(50%)',
+  height: 10,
+  overflow: 'hidden',
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  whiteSpace: 'nowrap',
+  width: 10,
+});
 
 const AddInvestMentTransactions = () => {
   const [userId, setUserId] = useState('');
   const [amount, setAmount] = useState('');
+  const [title, setTitle] = useState('');
+  const [transactionType, setTransactionType] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [appCategories, setAppCategories] = useState([]);
+  const [appType, setAppType] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [recaptchaToken, setRecaptchaToken] = useState(null);
 
-  // Dummy user data
+  // Dummy user data for demonstration
   const dummyUsers = [
     { id: 1, name: 'John Doe', email: 'john.doe@example.com', phone: '+1234567890' },
     { id: 2, name: 'Jane Smith', email: 'jane.smith@example.com', phone: '+1234567891' },
@@ -41,65 +63,80 @@ const AddInvestMentTransactions = () => {
     user.phone.includes(searchQuery)
   );
 
+  useEffect(() => {
+    const getCategories = async () => {
+      try {
+        const response = await api.get("/api/banner/get-banner-category");
+        if (response.status === 200) {
+          setAppCategories(response.data.data.notificationApp);
+          setCategories(response.data.data.sCategory);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+
+    getCategories();
+  }, []);
+
+  const handleChange = (event) => {
+    setTransactionType(event.target.value);
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    setSelectedFile(file);
+  };
+
+  const handleChange1 = (event) => {
+    setAppType(event.target.value);
+  };
+
   const handleSubmit = async () => {
     if (!selectedUser) {
-      alert("Please select a user first");
+      alert('Please select a user first');
       return;
     }
 
     if (!amount || amount <= 0) {
-      alert("Please enter a valid amount");
+      alert('Please enter a valid amount');
       return;
     }
 
-    if (!recaptchaToken) {
-      alert("Please complete the reCAPTCHA verification.");
-      return;
-    }
-
-    // 🔹 Prepare the payload as expected by backend
     const payload = {
       plan_id: 3,
       user_id: selectedUser.id,
       amount: parseFloat(amount),
-      wallet: "Main",
-      sender_user_id: 1,
-      recaptcha_token: recaptchaToken, // optional if backend verifies
+      wallet: "Main", // Hardcoded
+      sender_user_id: 1 // Hardcoded
     };
 
+    console.log('Investment Payload:', payload);
+    console.log('Selected User:', selectedUser);
+
     try {
-      // 🔹 Encrypt the payload
-      const encryptedPayload = DataEncrypt(JSON.stringify(payload));
-
-      console.log("Encrypted payload:", encryptedPayload);
-
-      // 🔹 Send encrypted payload to backend
-      const response = await api.post(
-        "/api/referral/plan/d376ca2995b3d140552f1bf6bc31c2eda6c9cfc8",
-        { data: encryptedPayload } // backend expects { data: encryptedString }
-      );
-
-      // 🔹 Decrypt response if needed (optional)
-      const decryptedResponse = DataDecrypt(response.data.data);
-      console.log("Decrypted response:", decryptedResponse);
-
+      const response = await api.post('/api/referral/plan/d376ca2995b3d140552f1bf6bc31c2eda6c9cfc8', payload);
       if (response) {
-        alert(`Prime added successfully for ${selectedUser.name}`);
         window.history.back();
+        alert(`Prime added successfully for ${selectedUser.name}`);
       }
     } catch (error) {
-      console.error("Error adding investment:", error);
-      alert("Error adding prime. Please try again.");
+      console.error('Error adding investment:', error);
+      alert('Error adding prime. Please try again.');
     }
   };
+
   return (
     <main className="p-6 space-y-6">
       <Grid container spacing={4} sx={{ padding: 2 }}>
         <Grid item xs={12}>
-          <TableContainer
-            component={Paper}
+          <TableContainer 
+            component={Paper} 
             elevation={3}
-            sx={{ borderRadius: '8px', overflow: 'hidden' }}
+            sx={{ 
+              borderRadius: '8px',
+              overflow: 'hidden'
+            }}
           >
             <Box
               sx={{
@@ -108,7 +145,13 @@ const AddInvestMentTransactions = () => {
                 borderBottom: '1px solid #e9ecef'
               }}
             >
-              <Typography variant="h5" sx={{ fontWeight: 600, color: '#1a1a1a' }}>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontWeight: 600,
+                  color: '#1a1a1a'
+                }}
+              >
                 Add New Prime
               </Typography>
             </Box>
@@ -142,9 +185,30 @@ const AddInvestMentTransactions = () => {
                             <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />
                           ),
                         }}
-                        sx={{ '& .MuiOutlinedInput-root': { height: '56px' } }}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            height: '56px',
+                            '&:hover fieldset': {
+                              borderColor: 'primary.main',
+                            },
+                          },
+                        }}
                       />
                     )}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props}>
+                        <Box>
+                          <Typography variant="body1" fontWeight={500}>
+                            {option.name}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {option.email} • {option.phone}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    )}
+                    noOptionsText="No users found"
+                    loading={false}
                   />
                 </Grid>
 
@@ -184,15 +248,14 @@ const AddInvestMentTransactions = () => {
                     type="number"
                     disabled={!selectedUser}
                     helperText={!selectedUser ? "Please select a user first" : ""}
-                    sx={{ '& .MuiOutlinedInput-root': { height: '56px' } }}
-                  />
-                </Grid>
-
-                {/* Google reCAPTCHA */}
-                <Grid item xs={12} md={6}>
-                  <ReCAPTCHA
-                    sitekey="6LdHTbwrAAAAAGawIo2escUPr198m8cP3o_ZzZK1" // 🔹 put your site key here
-                    onChange={(token) => setRecaptchaToken(token)}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        height: '56px',
+                        '&:hover fieldset': {
+                          borderColor: 'primary.main',
+                        },
+                      },
+                    }}
                   />
                 </Grid>
 
@@ -204,7 +267,7 @@ const AddInvestMentTransactions = () => {
                       color="success"
                       size="large"
                       onClick={handleSubmit}
-                      disabled={!selectedUser || !amount || amount <= 0 || !recaptchaToken}
+                      disabled={!selectedUser || !amount || amount <= 0}
                       sx={{
                         px: 4,
                         py: 1,
@@ -212,8 +275,13 @@ const AddInvestMentTransactions = () => {
                         textTransform: 'none',
                         fontWeight: 600,
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                        '&:hover': { boxShadow: '0 4px 8px rgba(0,0,0,0.15)' },
-                        '&:disabled': { backgroundColor: '#ccc', color: '#666' },
+                        '&:hover': {
+                          boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
+                        },
+                        '&:disabled': {
+                          backgroundColor: '#ccc',
+                          color: '#666',
+                        },
                       }}
                     >
                       Submit

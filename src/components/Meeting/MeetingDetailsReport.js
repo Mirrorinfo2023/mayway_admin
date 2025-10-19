@@ -185,7 +185,24 @@ const MeetingDetailsTransactions = ({ showServiceTrans }) => {
     <main className="p-6 space-y-6">
       <Grid container spacing={4} className={styles.container}>
         <Grid item xs={12}>
- 
+          <Box className={styles.headerBox}>
+            <TextField
+              placeholder="Search meetings..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              size="small"
+              className={styles.searchField}
+            />
+
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleGenerateReport}
+              className={styles.generateButton}
+            >
+              Generate Report
+            </Button>
+          </Box>
 
 
           <TableContainer component={Paper} className={styles.tableContainer}>

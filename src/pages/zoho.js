@@ -19,7 +19,6 @@ import { ContentCopy, Edit, Delete } from "@mui/icons-material";
 import dayjs from "dayjs";
 // import { DatePicker, LocalizationProvider, AdapterDayjs } from "@mui/x-date-pickers";
 import api from "../../utils/api";
-import { DataDecrypt, DataEncrypt } from "../../utils/encryption";
 import CreateMeetingDialog from "./CreateMeetingDialog";
 import EditMeetingDialog from "./EditMeetingDialog";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -39,48 +38,22 @@ export default function ZohoMeetingPage() {
   const fetchMeetings = async () => {
     try {
       setLoading(true);
-
-      // 1️⃣ Prepare request data
-      const reqData = {
+      const res = await api.post("/api/meeting/6a6b430a42c06b39a979950519f8d6732aeba6ea", {
         from_date: fromDate.format("YYYY-MM-DD"),
         to_date: toDate.format("YYYY-MM-DD"),
-      };
-
-      // 2️⃣ Encrypt request payload
-      const encryptedPayload = DataEncrypt(JSON.stringify(reqData));
-
-      // 3️⃣ Send POST request with encrypted data
-      const res = await api.post("/api/meeting/6a6b430a42c06b39a979950519f8d6732aeba6ea", {
-        data: encryptedPayload
       });
-
-      // 4️⃣ Decrypt response
-      if (res.data?.data) {
-        const decryptedData = DataDecrypt(res.data.data);
-        console.log("Decrypted meetings:", decryptedData);
-        if (decryptedData.status === 200) {
-          setMeetings(decryptedData.data);
-        } else {
-          console.log(decryptedData.message || "Failed to fetch meetings");
-        }
-      }
-
+      if (res.data.status === 200) setMeetings(res.data.data);
     } catch (err) {
       console.error(err);
-      console.log("Error fetching meetings");
+      alert("Error fetching meetings");
     } finally {
       setLoading(false);
     }
   };
 
-
   useEffect(() => {
-    // Only fetch if both dates are set
-    if (fromDate && toDate) {
-      fetchMeetings();
-    }
-  }, [fromDate, toDate]); // <-- run whenever fromDate or toDate changes
-
+    fetchMeetings();
+  }, []);
 
   const copyLink = (link) => {
     navigator.clipboard.writeText(link);
@@ -89,31 +62,17 @@ export default function ZohoMeetingPage() {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this meeting?")) return;
-
     try {
-      // 1️⃣ Encrypt the meetingId
-      const encryptedPayload = DataEncrypt(JSON.stringify({ meetingId: id }));
-
-      // 2️⃣ Send POST request with encrypted payload
-      const res = await api.post("/api/meeting/delete-meeting", { data: encryptedPayload });
-
-      // 3️⃣ Decrypt the response
-      if (res.data?.data) {
-        const decryptedData = DataDecrypt(res.data.data);
-
-        if (decryptedData.status === 200) {
-          alert(decryptedData.message || "Meeting deleted successfully!");
-          fetchMeetings();
-        } else {
-          alert(decryptedData.message || "Failed to delete meeting");
-        }
-      }
+      const res = await api.post("/api/meeting/delete-meeting", { meetingId: id });
+      if (res.data.status === 200) {
+        alert("Meeting deleted successfully!");
+        fetchMeetings();
+      } else alert(res.data.message || "Failed to delete meeting");
     } catch (err) {
       console.error(err);
       alert("Error deleting meeting");
     }
   };
-
 
   const handleEditOpen = (meeting) => setEditingMeeting(meeting);
 
@@ -129,7 +88,7 @@ export default function ZohoMeetingPage() {
                   <DatePicker label="From Date" value={fromDate} onChange={setFromDate} />
                   <DatePicker label="To Date" value={toDate} onChange={setToDate} />
                 </LocalizationProvider>
-                {/* <Button variant="contained" onClick={fetchMeetings}>Search</Button> */}
+                <Button variant="contained" onClick={fetchMeetings}>Search</Button>
                 <Button variant="contained" color="secondary" onClick={() => setOpenCreate(true)}>Create Meeting</Button>
               </Box>
             </Box>

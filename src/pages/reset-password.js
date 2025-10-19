@@ -1,150 +1,162 @@
-import React, { useEffect, useState, useRef } from "react";
-import { useDispatch } from 'react-redux';
+import React, { useContext, useEffect, useState } from "react";
+import { useDispatch, useSelector } from 'react-redux';
 import api from "../../utils/api";
 import withAuth from "../../utils/withAuth";
 import { callAlert } from "../../redux/actions/alert";
 import Layout from "@/components/Dashboard/layout";
-import { Grid, Paper, Box, TextField, Button, Typography, TableContainer } from "@mui/material";
+import { Grid,Paper,TableContainer, FormControl, InputLabel, Select, MenuItem,Button, Typography,Divider,Box,TextField } from "@mui/material";
 import Cookies from "js-cookie";
-import ReCAPTCHA from "react-google-recaptcha";
+
 
 function TransactionHistory(props) {
-    const [mobile_no, setMobileNo] = useState('');
-    const [old_password, setOldPassword] = useState('');
-    const [new_password, setNewPassword] = useState('');
-    const [captchaToken, setCaptchaToken] = useState(null);
-    const [errors, setErrors] = useState({});
-    const recaptchaRef = useRef();
+  
+    const [showServiceTrans, setShowServiceTrans] = useState({});
     const dispatch = useDispatch();
+    //const router = useRouter();
     const uid = Cookies.get('uid');
     const mobile = Cookies.get('mobile');
+    // const {uid, mobileno} = [];
+    const [mobile_no, setmobile_no] = useState('');
+    const [old_password, setold_password] = useState('');
+    const [new_password, setnew_password] = useState('');
+
+    
+
+    let rows;
+
+    if (showServiceTrans && showServiceTrans.length > 0) {
+        rows = [
+            ...showServiceTrans
+        ];
+    } else {
+        rows = [];
+    }
 
     useEffect(() => {
-        if (mobile) setMobileNo(mobile);
-    }, [mobile]);
+        const getTnx = async () => {
+            if(mobile){
+                setmobile_no(mobile);
+            }
+          const reqData = {
+            
+          };
 
-    const validateFields = () => {
-        const newErrors = {};
-        if (!old_password.trim()) newErrors.old_password = "Old password is required.";
-        if (!new_password.trim()) newErrors.new_password = "New password is required.";
-        if (!captchaToken) newErrors.captcha = "Please verify that you are not a robot.";
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
+          // const originalString = 'Hello, World!';
+          // const encryptedData = DataEncrypt(JSON.stringify(originalString));
+          // console.log(encryptedData);
+          // const decryptedObject = DataDecrypt(encryptedData);
+          // console.log(decryptedObject);
+          try {
+            const response = await api.post('/api/setting/get-panel', reqData);
+            if (response.status === 200) {
+                setservice_name(response.data.data.service_name);
+                setservice_short_name(response.data.data.short_name);
+                setpriority(response.data.data.priority);
+                setstatus(response.data.data.status);
+            }
+          } catch (error) {
+            if (error?.response?.data?.error) {
+              dispatch(callAlert({ message: error.response.data.error, type: 'FAILED' }));
+            } else {
+              dispatch(callAlert({ message: error.message, type: 'FAILED' }));
+            }
+          }
+        };
+    
+        if (uid) {
+          getTnx();
+        }
+      }, [uid,mobile, dispatch]);
 
     const handleSubmit = async () => {
-        if (!validateFields()) return;
 
-        const formData = {
-            userid: uid,
-            oldpassword: old_password,
-            password: new_password,
-            captchaToken
-        };
+        const formData ={
+            'userid': uid,
+            'oldpassword': old_password,
+            'password': new_password
+        }
 
         try {
             const response = await api.post("/api/users/admin-reset-password", formData);
+            
+            if (response) {
+                if(response.status === 200)
+                {
+                    alert('Reset password successfully');
+                    Cookies.remove('uid');
+                    Cookies.remove('role');
+                }else{
+                    dispatch(callAlert({ message: response.data.error, type: 'FAILED' }));
+                }
+                
+            } 
 
-            if (response.status === 200) {
-                alert('Password reset successfully');
-                Cookies.remove('uid');
-                Cookies.remove('role');
-                recaptchaRef.current.reset();
-                setCaptchaToken(null);
-            } else {
-                dispatch(callAlert({ message: response.data.error, type: 'FAILED' }));
-            }
         } catch (error) {
-            console.error('Error updating password:', error);
-            dispatch(callAlert({ message: error.message || 'Something went wrong', type: 'FAILED' }));
+            console.error('Error updating :', error);
         }
+        
     };
+          
+
 
     return (
+
         <Layout>
-            <Grid container spacing={4} sx={{ padding: 2 }}>
-                <Grid item xs={12}>
-                    <Typography variant="h5" sx={{ padding: 2 }}>Reset Password</Typography>
-                </Grid>
+            <Grid
+                container
+                spacing={4}
+                sx={{ padding: 2 }}
+            >
+            
+            <Grid item={true} xs={12}   >
+              <TableContainer component={Paper} >
+                <Box display={'inline-block'} justifyContent={'space-between'} alignItems={'right'} mt={1} mb={1} style={{width: '40%', verticalAlign: 'top'}} >
+                    <Typography variant="h5"  sx={{ padding: 2 }}>Reset Password</Typography>
+                </Box>
+                </TableContainer>
+            </Grid>
+            
+            
+                <Grid item={true} xs={12}   >
+                    <TableContainer component={Paper} >
 
-                <Grid item xs={12}>
-                    <TableContainer component={Paper} sx={{ p: 2 }}>
-                        <Grid container spacing={2}>
-                            {/* Mobile No - full width */}
-                            <Grid item xs={12} sm={6}>
-                                <TextField
-                                    label="Mobile No"
-                                    variant="outlined"
-                                    fullWidth
-                                    value={mobile_no}
-                                    InputProps={{ readOnly: true }}
-                                />
-                            </Grid>
+                        <Box justifyContent={'space-between'} alignItems={'right'} mt={1} mb={1} style={{width: '50%', verticalAlign: 'top', padding: '0 10px'}} >
+                            
+                            <TextField required  fullWidth label="Mobile No" variant="outlined" display={'inline-block'}
+                            value={mobile_no}  InputProps={{ readOnly: true }} />
+                        </Box>
+                        <br />
+                        <Box justifyContent={'space-between'} alignItems={'right'} mt={1} mb={1} style={{width: '50%', verticalAlign: 'top', padding: '0 10px'}} >
+                            
+                            <TextField required  fullWidth label="Old Password" variant="outlined" display={'inline-block'}
+                            onChange={(e) => setold_password(e.target.value)} type='password'
+                              />
+                        </Box>
+                        <br />
+                        
+                        <Box justifyContent={'space-between'} alignItems={'right'} mt={1} mb={1} style={{width: '50%', verticalAlign: 'top', padding: '0 10px'}} >
+                            
+                            <TextField required  fullWidth label="New Password" variant="outlined" display={'inline-block'}
+                            onChange={(e) => setnew_password(e.target.value)} type='password'
+                             />
+                        </Box>
 
-                            {/* Old Password */}
-                            <Grid item xs={12} sm={6}>
-                                <TextField
-                                    label="Old Password"
-                                    variant="outlined"
-                                    type='password'
-                                    fullWidth
-                                    value={old_password}
-                                    onChange={(e) => setOldPassword(e.target.value)}
-                                    error={!!errors.old_password}
-                                    helperText={errors.old_password}
-                                />
-                            </Grid>
-
-                            {/* New Password */}
-                            <Grid item xs={12} sm={6}>
-                                <TextField
-                                    label="New Password"
-                                    variant="outlined"
-                                    type='password'
-                                    fullWidth
-                                    value={new_password}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                    error={!!errors.new_password}
-                                    helperText={errors.new_password}
-                                />
-                            </Grid>
-
-                            {/* Google reCAPTCHA */}
-                            <Grid item xs={12} sm={6}>
-                                <ReCAPTCHA
-                                    sitekey="6LdHTbwrAAAAAGawIo2escUPr198m8cP3o_ZzZK1"
-                                    onChange={(token) => {
-                                        setCaptchaToken(token);
-                                        if (errors.captcha) setErrors(prev => ({ ...prev, captcha: null }));
-                                    }}
-                                    ref={recaptchaRef}
-                                />
-                                {errors.captcha && (
-                                    <Typography color="error" variant="body2" mt={0.5}>
-                                        {errors.captcha}
-                                    </Typography>
-                                )}
-                            </Grid>
-
-                            {/* Submit button */}
-                            <Grid item xs={12}>
-                                <Box display="flex" justifyContent="flex-end">
-                                    <Button
-                                        variant="contained"
-                                        color="success"
-                                        size="medium"
-                                        onClick={handleSubmit}
-                                    >
-                                        Change Password
-                                    </Button>
-                                </Box>
-                            </Grid>
+                        <br /><br />
+                        <Grid item>
+                            <Box display="flex" justifyContent="flex-first" mr={2}  mt={1} ml={2} mb={1} >
+                            <Button variant="contained" color="success" size="medium" onClick={handleSubmit}>
+                                Change Password
+                            </Button>
+                            </Box>   
                         </Grid>
+                        <br /><br /><br /><br /><br />
                     </TableContainer>
                 </Grid>
             </Grid>
         </Layout>
+
+
     );
 }
-
 export default withAuth(TransactionHistory);
+

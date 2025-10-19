@@ -3,7 +3,6 @@ import React, { useContext, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Cookies from "js-cookie";
 import api from "../../utils/api";
-import { DataDecrypt, DataEncrypt } from "../../utils/encryption";
 import withAuth from "../../utils/withAuth";
 import { callAlert } from "../../redux/actions/alert";
 import Layout from "@/components/Dashboard/layout";
@@ -125,7 +124,7 @@ function RateReport(props) {
     rows = [];
   }
 
-
+  console.log(rows);
   const handleSearch = (text) => {
     setSearchTerm(text);
   };
@@ -144,22 +143,12 @@ function RateReport(props) {
         to_date: toDate.toISOString().split("T")[0],
       };
 
-      try {
-        // 🔹 Encrypt request payload
-        const encryptedPayload = DataEncrypt(JSON.stringify(reqData));
-
-        const response = await api.post("/api/rating/get-rating", {
-          data: encryptedPayload, // send encrypted data
-        });
-        // console.log("Response: ", response);
-
-        if (response.data?.data) {
-          // 🔹 Decrypt backend response
-          const decryptedData = DataDecrypt(response.data.data);
-          console.log("Decrypted Response:", decryptedData);
-
-          setShowServiceTrans(decryptedData.data);
-          setmasterReport(decryptedData.report);
+      try { 
+        const response = await api.post("/api/rating/get-rating", reqData);
+        console.log(response.data.data);
+        if (response.status === 200) {
+          setShowServiceTrans(response.data.data);
+          setmasterReport(response.data.report);
         }
       } catch (error) {
         if (error?.response?.data?.error) {
@@ -176,7 +165,6 @@ function RateReport(props) {
       getTnx();
     }
   }, [fromDate, toDate, dispatch]);
-
 
   const handleFromDateChange = (date) => {
     setFromDate(date);

@@ -8,7 +8,7 @@ import { Padding, Visibility, VisibilityOff } from "@mui/icons-material";
 import { DataEncrypt, DataDecrypt } from '../../../utils/encryption';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { ArrowForward, Person, Lock } from "@mui/icons-material";
-import styles from "@/components/Login/Login.module.css"; // Import styles
+import styles from "./Login.module.css"; // Import styles
 
 const UserName = ({ handleChange, onForgotPassword }) => {
 
@@ -31,72 +31,71 @@ const UserName = ({ handleChange, onForgotPassword }) => {
         setCaptchaToken(token);
     };
 
-
     const submitHandler = async (e) => {
         e.preventDefault();
 
-        // --- Validate input ---
+        // Build error object
         const newError = {
             username: userName.trim() === "" ? "Username is required." : "",
             password: password.trim() === "" ? "Password is required." : "",
             captcha: !captchaToken ? "Please complete the CAPTCHA." : ""
         };
+
         setError(newError);
 
-        if (Object.values(newError).some(msg => msg !== "")) return;
+        // If any error message is not empty → stop here
+        if (Object.values(newError).some((msg) => msg !== "")) {
+            return;
+        }
 
+        // ✅ No errors → continue with API call
         try {
-            // --- Encrypt request payload ---
-            const encryptedData = DataEncrypt(JSON.stringify({
+            const reqData = {
                 username: userName,
                 password: password,
                 is_admin: 1,
                 captchaToken
-            }));
+            };
 
-            // --- Send encrypted request ---
-            const response = await api.post('/api/users/admin_login', { data: encryptedData });
+            const response = await api.post('/api/users/admin_login', reqData);
 
-            // --- Decrypt response ---
-            const decryptedResponse = DataDecrypt(response.data.data);
-            console.log("✅ Decrypted response:", decryptedResponse);
+            console.log("respomce is", response)
+            if (response.status === 200) {
+                setAlert({ open: true, type: true, message: 'SignIn successfully!' });
 
-            if (decryptedResponse.status === 200) {
-                const responseData = decryptedResponse.data;
-                const token = decryptedResponse.token;
+                const responseData = response.data.data; // user info
+                const token = response.data.token;       // token from top-level
 
-                // --- Save to localStorage ---
                 localStorage.setItem('role', 'user');
                 localStorage.setItem('uid', responseData.id);
                 localStorage.setItem('email', responseData.email);
-                localStorage.setItem('token', token);
+                localStorage.setItem('token', token);  // ✅ set token correctly
                 localStorage.setItem('name', `${responseData.first_name} ${responseData.last_name}`);
                 localStorage.setItem('mobile', responseData.mobile);
-                localStorage.setItem('employee_role', responseData.role_name || '');
-                localStorage.setItem('menu', JSON.stringify(decryptedResponse.employeeMenu || []));
+                localStorage.setItem('employee_role', responseData.role_name);
+                localStorage.setItem('menu', JSON.stringify(response.data.employeeMenu));
 
-                // --- Save to cookies ---
                 Cookies.set('role', 'user', { expires: 1 });
                 Cookies.set('uid', responseData.id, { expires: 1 });
                 Cookies.set('name', `${responseData.first_name} ${responseData.last_name}`);
                 Cookies.set('mobile', responseData.mobile);
-                Cookies.set('employee_role', responseData.role_name || '', { expires: 1 });
-                Cookies.set('token', token, { expires: 1 });
+                Cookies.set('employee_role', responseData.role_name, { expires: 1 });
+                Cookies.set('token', token, { expires: 1 }); // ✅ set token in cookies too
 
-                // --- Navigate to dashboard ---
                 route.push('/dashboard');
-
-            } else {
-                setAlert({ open: true, type: false, message: decryptedResponse.message });
             }
-
+            else {
+                setAlert({ open: true, type: false, message: response.data.message });
+            }
         } catch (error) {
-            console.error("Login Error:", error);
-            setAlert({ open: true, type: false, message: error.message || "Something went wrong!" });
+            // handle backend error same as before
+            if (error?.response?.status === 401) {
+                setAlert({ open: true, type: false, message: error.response.data.message });
+            } else {
+                setAlert({ open: true, type: false, message: error.message });
+            }
         }
     };
-
-
 
 
     const handleClose = (event, reason) => {

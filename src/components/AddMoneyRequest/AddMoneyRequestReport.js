@@ -21,7 +21,6 @@ import Modal from "@mui/material/Modal";
 import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
 import { TextareaAutosize } from "@mui/base/TextareaAutosize";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import { DataEncrypt, DataDecrypt } from '../../../utils/encryption'; // your encryption file
 
 const style = {
   position: "absolute",
@@ -51,9 +50,9 @@ const AddMoneyRequestTransactions = ({ showServiceTrans }) => {
     const term = searchTerm.toLowerCase();
     return (
       (row.user_name && row.user_name.toLowerCase().includes(term)) ||
-      // (row.user_id && row.user_id.toLowerCase().includes(term)) ||
-      // (row.mobile && row.mobile.includes(term)) ||
-      // (row.transaction_id && row.transaction_id.toLowerCase().includes(term)) ||
+      (row.user_id && row.user_id.toLowerCase().includes(term)) ||
+      (row.mobile && row.mobile.includes(term)) ||
+      (row.transaction_id && row.transaction_id.toLowerCase().includes(term)) ||
       (row.amount && row.amount.toString().includes(term))
     );
   });
@@ -184,7 +183,6 @@ const AddMoneyRequestTransactions = ({ showServiceTrans }) => {
 
     let note = "";
     let action = "";
-
     if (status === 1) {
       note = "Approve";
       action = "Approve";
@@ -193,48 +191,30 @@ const AddMoneyRequestTransactions = ({ showServiceTrans }) => {
       action = "Reject";
     }
 
-    const payload = {
-      status,
-      note,
+    const requestData = {
+      status: status,
+      note: note,
       add_money_req_id: addMoneyReqId,
-      action
+      action: action,
     };
 
     try {
-      // ✅ Encrypt request
-      const encryptedData = DataEncrypt(JSON.stringify(payload));
-
       const response = await api.post(
         "/api/add_money/update-add-money",
-        { data: encryptedData }
+        requestData
       );
-
-      // ✅ Decrypt response
-      let decryptedResponse;
-      try {
-        decryptedResponse = DataDecrypt(response.data.data); // assuming backend sends { data: <encrypted_string> }
-      } catch (err) {
-        console.error("Failed to decrypt response:", err);
-        decryptedResponse = response.data;
-      }
-
-      console.log("Decrypted Response:", decryptedResponse);
-
-      if (decryptedResponse.status === 200) {
-        alert("💰 Money request processed successfully!");
+      if (response.data.status === 200) {
         window.location.reload();
       } else {
-        alert(decryptedResponse.message || "Request failed on server side");
+        console.log("Failed to update status.");
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("Something went wrong!");
     }
 
     handleCloseModal1();
     handleCloseModal2();
   };
-
 
   return (
     <main className="p-6 space-y-6">
@@ -288,14 +268,14 @@ const AddMoneyRequestTransactions = ({ showServiceTrans }) => {
                         <StyledTableCell>
                           {index + 1 + page * rowsPerPage}
                         </StyledTableCell>
-                        <StyledTableCell>{row.first_name} {row.last_name} </StyledTableCell>
+                        <StyledTableCell>{row.user_name}</StyledTableCell>
                         <StyledTableCell>{row.user_id}</StyledTableCell>
                         <StyledTableCell>{row.mobile}</StyledTableCell>
-                        <StyledTableCell>{row.category}</StyledTableCell>
+                        <StyledTableCell>{row.payment_mode}</StyledTableCell>
                         <StyledTableCell>{row.amount}</StyledTableCell>
-                        <StyledTableCell>{row.trans_no}</StyledTableCell>
-                        <StyledTableCell>{row.trans_no || "-"}</StyledTableCell>
-                        <StyledTableCell>{row.created_on}</StyledTableCell>
+                        <StyledTableCell>{row.transaction_id}</StyledTableCell>
+                        <StyledTableCell>{row.upi_id || "-"}</StyledTableCell>
+                        <StyledTableCell>{row.created_at}</StyledTableCell>
                         <StyledTableCell>{row.remarks || "-"}</StyledTableCell>
                         <StyledTableCell
                           style={{
@@ -303,16 +283,16 @@ const AddMoneyRequestTransactions = ({ showServiceTrans }) => {
                               row.status === 1
                                 ? "green"
                                 : row.status === 2
-                                  ? "red"
-                                  : "blue",
+                                ? "red"
+                                : "blue",
                             fontWeight: 600,
                           }}
                         >
                           {row.status === 1
                             ? "Approved"
                             : row.status === 2
-                              ? "Rejected"
-                              : "Pending"}
+                            ? "Rejected"
+                            : "Pending"}
                         </StyledTableCell>
                         <StyledTableCell>
                           <Box
@@ -381,41 +361,41 @@ const AddMoneyRequestTransactions = ({ showServiceTrans }) => {
                 )}
               </TableBody>
             </Table>
-
+            
           </TableContainer>
           <StyledTablePagination
-            rowsPerPageOptions={rowsPerPageOptions}
-            component="div"
-            count={filteredRows.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-            sx={{
-              marginTop: "32px",
-              borderTop: "1px solid #e0e0e0",
-              padding: "16px",
-              backgroundColor: "#f8f9fa",
-              borderRadius: "0 0 16px 16px",
-              "& .MuiTablePagination-select": {
-                minWidth: "80px",
-              },
-              "& .MuiTablePagination-menu": {
-                "& .MuiPaper-root": {
-                  maxHeight: "200px",
+              rowsPerPageOptions={rowsPerPageOptions}
+              component="div"
+              count={filteredRows.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              sx={{
+                marginTop: "32px",
+                borderTop: "1px solid #e0e0e0",
+                padding: "16px",
+                backgroundColor: "#f8f9fa",
+                borderRadius: "0 0 16px 16px",
+                "& .MuiTablePagination-select": {
+                  minWidth: "80px",
                 },
-              },
-              "& .MuiTablePagination-selectRoot": {
-                marginRight: "32px",
-              },
-              "& .MuiTablePagination-toolbar": {
-                minHeight: "52px",
-              },
-              "& .MuiTablePagination-spacer": {
-                flex: "none",
-              },
-            }}
-          />
+                "& .MuiTablePagination-menu": {
+                  "& .MuiPaper-root": {
+                    maxHeight: "200px",
+                  },
+                },
+                "& .MuiTablePagination-selectRoot": {
+                  marginRight: "32px",
+                },
+                "& .MuiTablePagination-toolbar": {
+                  minHeight: "52px",
+                },
+                "& .MuiTablePagination-spacer": {
+                  flex: "none",
+                },
+              }}
+            />
         </Grid>
       </Grid>
 
